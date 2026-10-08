@@ -1,0 +1,392 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Boat or Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. The river (Fig. 2.6 style) on top, two sensor read-out graphs beneath, predictions at thumb height. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --conc: #E8A33D; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --bank: #4C5B70; --boat: #C24A00;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --conc: #F2B95A; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --bank: #A9B6C9; --boat: #FF9A5C; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --conc: #F2B95A; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --bank: #A9B6C9; --boat: #FF9A5C; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: linear-gradient(90deg, var(--good) 50%, var(--key) 50%); border-color: var(--muted); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.ulab { position: absolute; font-size: 15px; color: var(--ink); pointer-events: none; background: color-mix(in srgb, var(--surface) 70%, transparent); padding: 0 4px; border-radius: 3px; }
+.clock { position: absolute; right: 8px; top: 44px; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+.ckey { display: flex; align-items: center; gap: 10px; justify-content: center; font-size: 14px; color: var(--muted); line-height: 1.2; }
+.ckey span { text-align: center; }
+.ckey i { flex: 0 1 180px; height: 14px; border-radius: 7px; border: 1px solid var(--line); background: linear-gradient(90deg, color-mix(in srgb, var(--conc) 8%, var(--surface)), var(--conc)); }
+.graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.g h2 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.g h2 i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.gwrap { position: relative; }
+.ax { position: absolute; font-size: 13px; color: var(--muted); pointer-events: none; }
+.ay { left: 0; top: -2px; }
+.ax1 { right: 2px; bottom: -4px; }
+.g .val { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.q i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.choice { font: 600 14.5px/1.15 var(--font-body); padding: 10px 4px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice svg { width: 30px; height: 20px; }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.row { display: grid; grid-template-columns: 7em 1fr 3.6em; align-items: center; gap: 10px; }
+.row output { font-variant-numeric: tabular-nums; text-align: right; }
+input[type=range] { width: 100%; accent-color: var(--flow); height: 32px; margin: 0; }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.final .big { font-size: 56px !important; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.bob { display: inline-block; animation: bob 1.6s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .emo.bob { animation: none; } }
+.verdict { margin: 0; font-weight: 600; }
+.final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="A river carrying dye past a fixed probe and a drifting boat"></canvas>
+    <div class="clock">\(t=\) <span id="clock"></span></div>
+    <div class="ulab" id="ulab">\(u_0=1\)</div>
+  </div>
+
+  <div class="ckey" aria-label="Colour key for the dye concentration"><span>clear water<br><b>low \(c\)</b></span><i></i><span>dark dye<br><b>high \(c\)</b></span></div>
+
+  <div class="graphs" aria-label="Sensor read-outs">
+    <div class="g"><h2><i style="background:var(--bank)"></i><span id="nameA">Fixed probe</span></h2><div class="gwrap"><canvas id="gA" height="90"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vAn"></span></div></div>
+    <div class="g"><h2><i style="background:var(--boat)"></i><span id="nameB">Drifting boat</span></h2><div class="gwrap"><canvas id="gB" height="90"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vBn"></span></div></div>
+  </div>
+
+  <section class="card" id="card">
+    <div id="predict">
+      <p class="q"><i style="background:var(--bank)"></i>What does the probe on the bank record?</p>
+      <div class="choices" id="chA" role="group" aria-label="Probe prediction"></div>
+      <p class="q" style="margin-top:10px"><i style="background:var(--boat)"></i>What does the drifting boat record?</p>
+      <div class="choices" id="chB" role="group" aria-label="Boat prediction"></div>
+    </div>
+    <div id="motor" hidden>
+      <div class="row"><label for="v">Boat speed \(v\)</label><input type="range" id="v" min="-2" max="3" step="0.1" value="1" list="vticks"><datalist id="vticks"><option value="1" label="u₀"></option></datalist><output id="vo" for="v"></output></div>
+      <p class="brief" id="motorNote"></p>
+    </div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Start the clock</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 2, the material derivative · prototype</p>
+</div>
+
+<script>
+(function () {
+  const U0 = 1, XL = 0, XR = 8, T = 4; // channel x in [0,6], run for 4 time units; boat starts at x = 1
+  const OPTS = [
+    { v: 'steady', label: 'Steady', path: 'M3 10h24' },
+    { v: 'up', label: 'Rising', path: 'M3 16L27 4' },
+    { v: 'down', label: 'Falling', path: 'M3 4L27 16' },
+    { v: 'updown', label: 'Up, then down', path: 'M3 16Q15 -6 27 16' }
+  ];
+  // c(x,t) in [0,1]-ish; the probe sits at x=3, the boat starts at x=1 and drifts at U0 (or v in the motor round)
+  const ROUNDS = [
+    {
+      title: 'Dye that fades downstream', brief: 'A steady picture: the dye is dark (high \\(c\\)) upstream and pale (low \\(c\\)) downstream, \\(c=c(x)\\) only, and it never changes. The river flows right at \\(u_0=1\\). Predict what each sensor records over the next 4 s.',
+      c: (x, t) => 0.9 - 0.12 * x, ct: 0, cx: -0.12,
+      debrief: ['\\(\\partial c/\\partial t=0\\): the probe reads a constant. \\(Dc/Dt=u_0\\,\\partial c/\\partial x=-0.12\\): the boat drifts into paler water and its reading falls.', 'A steady field is not a constant one for whoever moves through it. This is Fig. 2.5.']
+    },
+    {
+      title: 'Fading in time, steeper downstream', brief: 'The dye is \\(c=c_0+0.1x-0.15t\\): darker (more dye) downstream, and fading everywhere as time passes. The river still flows right at \\(u_0=1\\). Predict what each sensor records.',
+      c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1,
+      debrief: ['Probe: \\(\\partial c/\\partial t=-0.15\\), falling. Boat: \\(Dc/Dt=-0.15+u_0\\times0.1=-0.05\\), also falling, but more slowly: it drifts towards darker water as the dye fades.', 'The two terms compete. Change the boat\'s speed and its reading can hold steady or even rise, which is the last round.']
+    },
+    {
+      title: 'Motorboat', brief: 'Same dye as before, \\(c=c_0+0.1x-0.15t\\). Now the boat has a motor and its speed \\(v\\) is yours to choose; the river itself no longer matters to what the boat records. <b>Choose \\(v\\) so that its reading stays constant.</b> One attempt.',
+      c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1, motor: true, vstar: 1.5,
+      debrief: ['A boat moving at speed \\(v\\) records \\(\\partial c/\\partial t+v\\,\\partial c/\\partial x=-0.15+0.1v\\). Steady needs \\(v=1.5\\): faster than the river.', 'The material derivative is the special case \\(v=u_0\\): the rate recorded by an observer who moves with the fluid.']
+    }
+  ];
+  const PTS = [10, 10]; // per sensor; motor round scores 20
+  $('max').textContent = ROUNDS.length * 20;
+
+  function $(id) { return document.getElementById(id); }
+  const cv = $('cv'), ctx = cv.getContext('2d'), gA = $('gA'), gB = $('gB');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let R = 0, st, results = ROUNDS.map(() => null);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // ---------- sound (synthesised, no files) ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    function noise(t0, dur, gain, f0, f1) {
+      const a = ctxA(); if (!a || !on) return; const n = a.sampleRate * dur, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const s = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; flt.type = 'bandpass'; flt.Q.value = 1.2;
+      flt.frequency.setValueAtTime(f0, a.currentTime + t0); flt.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain, a.currentTime + t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      s.connect(flt).connect(g).connect(a.destination); s.start(a.currentTime + t0);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      wake() { ctxA(); },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      horn() { tone(110, 0, 0.9, 'sawtooth', 0.12, 104); tone(165, 0, 0.9, 'square', 0.04, 156); },
+      whoosh() { noise(0, 0.8, 0.25, 300, 2400); },
+      click() { tone(1800, 0, 0.025, 'square', 0.06); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); } // the trombone
+      }
+    };
+  })();
+  const sndBtn = document.getElementById('sndBtn');
+  if (sndBtn) { const paint = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); }; paint(); sndBtn.addEventListener('click', () => { snd.toggle(); paint(); }); }
+
+
+  function fresh() { return { phase: 'predict', pA: null, pB: null, t: 0, recA: [], recB: [], v: U0 }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+
+  let W = 300, H = 150;
+  function size() {
+    const w = $('stage').clientWidth; W = w; H = Math.round(Math.min(230, Math.max(170, w * 0.5)));
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const g of [gA, gB]) { const r = g.getBoundingClientRect(); g.width = Math.round(r.width * dpr); g.height = 90 * dpr; g.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0); }
+    draw();
+  }
+  const sx = x => 14 + (x - XL) / (XR - XL) * (W - 28);
+
+  function hatch(y0, y1) {
+    const cWall = css('--wall'); ctx.strokeStyle = cWall; ctx.lineWidth = 1.2;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, y0, W, y1 - y0); ctx.clip();
+    for (let x = -20; x < W + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); }
+    ctx.restore(); ctx.beginPath(); ctx.moveTo(0, y0 === 0 ? y1 : y0); ctx.lineTo(W, y0 === 0 ? y1 : y0); ctx.lineWidth = 2; ctx.stroke();
+  }
+  function boatAt(t) { const r = ROUNDS[R]; return 1 + (r.motor ? st.v : U0) * t; }
+
+  function stickman(X, Y, col, seated) {
+    // X: centre, Y: ground (feet) level; about 30 px tall
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    const headR = 4.5, hipY = seated ? Y - 10 : Y - 12, shoulderY = Y - 22;
+    ctx.beginPath(); ctx.arc(X, Y - 30, headR, 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(X, Y - 25); ctx.lineTo(X, hipY); ctx.stroke();
+    if (seated) { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X + 9, hipY); ctx.lineTo(X + 9, Y); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X - 6, Y); ctx.moveTo(X, hipY); ctx.lineTo(X + 6, Y); ctx.stroke(); }
+    return shoulderY;
+  }
+  function draw() {
+    const r = ROUNDS[R], t = st.t, cConc = css('--conc'), cBank = css('--bank'), cBoat = css('--boat'), cInk = css('--ink'), cSurf = css('--surface');
+    ctx.clearRect(0, 0, W, H);
+    const top = 40, bot = H - 14;
+    // dye: vertical strips of orange, opacity = c
+    const n = 120; const sw = (W - 28) / n;
+    for (let i = 0; i < n; i++) {
+      const x = XL + (i + 0.5) / n * (XR - XL), c = Math.max(0, Math.min(1, r.c(x, t)));
+      ctx.fillStyle = cConc; ctx.globalAlpha = 0.08 + 0.85 * c; ctx.fillRect(14 + i * sw, top, sw + 0.6, bot - top);
+    }
+    ctx.globalAlpha = 1;
+    hatch(0, top); hatch(bot, H);
+    // flow arrows: ink with a pale halo so they read on dark and pale dye alike
+    const ya = top + (bot - top) * 0.47, L = 0.5 / (XR - XL) * (W - 28);
+    for (const x of [0.6, 2.0, 3.7, 5.4, 7.1]) {
+      const X = sx(x);
+      for (const [col, lw] of [[cSurf, 6], [cInk, 2.5]]) {
+        ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(X - L / 2, ya); ctx.lineTo(X + L / 2 - 4, ya); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(X + L / 2, ya); ctx.lineTo(X + L / 2 - 9, ya - 6); ctx.lineTo(X + L / 2 - 9, ya + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke();
+      }
+    }
+    // probe: a person on the bank at x = 3 holding a pole into the water
+    const Xp = sx(3);
+    const sh = stickman(Xp - 8, top, cBank, false);
+    ctx.strokeStyle = cBank; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xp - 8, sh); ctx.lineTo(Xp + 2, sh + 6); ctx.stroke(); // arm
+    ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xp + 2, sh); ctx.lineTo(Xp + 2, top + 30); ctx.stroke(); // pole
+    ctx.fillStyle = cBank; ctx.beginPath(); ctx.arc(Xp + 2, top + 33, 5, 0, 2 * Math.PI); ctx.fill(); // sensor
+    ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'left'; ctx.fillText('probe', Xp + 10, top - 14);
+    // boat with a seated person and a sensor over the side
+    const Xb = sx(Math.min(XR, boatAt(t))), yb = bot - 24;
+    ctx.fillStyle = cBoat; ctx.strokeStyle = cInk; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(Xb - 22, yb - 6); ctx.lineTo(Xb + 22, yb - 6); ctx.lineTo(Xb + 13, yb + 8); ctx.lineTo(Xb - 13, yb + 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const shb = stickman(Xb - 6, yb - 6, cInk, true);
+    ctx.strokeStyle = cInk; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xb - 6, shb); ctx.lineTo(Xb + 8, shb + 6); ctx.stroke(); // arm
+    ctx.strokeStyle = cBoat; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xb + 14, shb + 4); ctx.lineTo(Xb + 26, yb + 12); ctx.stroke(); // sensor line over the side
+    ctx.fillStyle = cBoat; ctx.beginPath(); ctx.arc(Xb + 27, yb + 14, 5, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = cInk; ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText(r.motor ? 'motorboat' : 'boat', Xb - 4, yb + 20);
+    $('clock').textContent = t.toFixed(1);
+    const ul = $('ulab'); ul.style.left = (sx(0.6) - L / 2) + 'px'; ul.style.top = (ya - 42) + 'px';
+    graph(gA, st.recA, cBank); graph(gB, st.recB, cBoat);
+    $('vAn').textContent = st.recA.length ? st.recA[st.recA.length - 1][1].toFixed(2) : r.c(3, 0).toFixed(2);
+    $('vBn').textContent = st.recB.length ? st.recB[st.recB.length - 1][1].toFixed(2) : r.c(1, 0).toFixed(2);
+  }
+  function graph(g, rec, col) {
+    const c = g.getContext('2d'), w = g.getBoundingClientRect().width, h = 90; c.clearRect(0, 0, w, h);
+    const cLine = css('--line'), cMuted = css('--muted');
+    c.strokeStyle = cLine; c.lineWidth = 1; c.beginPath(); c.moveTo(24, 4); c.lineTo(24, h - 14); c.lineTo(w - 4, h - 14); c.stroke();
+    c.fillStyle = cMuted; c.font = '11px ' + css('--font-body'); c.textAlign = 'right';
+    c.fillText('1', 20, 10); c.fillText('0', 20, h - 12);
+    const X = t => 24 + t / T * (w - 30), Y = v => h - 14 - Math.max(0, Math.min(1, v)) * (h - 20);
+    if (rec.length > 1) { c.strokeStyle = col; c.lineWidth = 2.5; c.beginPath(); rec.forEach((q, i) => i ? c.lineTo(X(q[0]), Y(q[1])) : c.moveTo(X(q[0]), Y(q[1]))); c.stroke(); }
+  }
+
+  // ---------- UI ----------
+  function choices(box, key) {
+    box.innerHTML = '';
+    OPTS.forEach(o => {
+      const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = o.v; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = '<svg viewBox="0 0 30 20" aria-hidden="true"><path d="' + o.path + '" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>' + o.label;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st[key] = o.v; $('go').disabled = !(st.pA && st.pB); };
+      box.append(b);
+    });
+  }
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; const s = results[i]; e.dataset.s = s === null ? (i === R ? 'now' : '') : s === 20 ? 'right' : s === 0 ? 'wrong' : 'half'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s || 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '.legend', '#brief', '.ckey', '.graphs', '#pill']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
+    $('predict').hidden = !!r.motor; $('motor').hidden = !r.motor;
+    $('nameB').textContent = r.motor ? 'Motorboat' : 'Drifting boat';
+    if (r.motor) { $('v').value = 1; st.v = 1; $('vo').textContent = '1.0'; $('motorNote').innerHTML = 'The tick at \\(v=u_0=1\\) is the drifting boat of the earlier rounds. Its reading will be plotted on the right.'; $('go').disabled = false; }
+    else { choices($('chA'), 'pA'); choices($('chB'), 'pB'); $('go').disabled = true; }
+    $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); size(); typeset([$('brief'), $('motor'), $('predict'), document.querySelector('.ckey')]);
+  }
+  $('v').addEventListener('input', () => { if (st.phase !== 'predict') { $('v').value = st.v; return; } st.v = +$('v').value; $('vo').textContent = st.v.toFixed(1); draw(); });
+
+  function classify(rec) {
+    const v0 = rec[0][1], v1 = rec[rec.length - 1][1], vmax = Math.max(...rec.map(q => q[1])), eps = 0.02;
+    if (vmax > Math.max(v0, v1) + 0.08) return 'updown';
+    if (Math.abs(v1 - v0) < eps) return 'steady';
+    return v1 > v0 ? 'up' : 'down';
+  }
+
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict') return;
+    const r = ROUNDS[R]; st.phase = 'run'; st.t = 0; st.recA = []; st.recB = [];
+    $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    snd.horn();
+    let last = performance.now();
+    function step(now) {
+      const real = Math.min(0.05, (now - last) / 1000); last = now;
+      st.t = reduceMotion ? T : Math.min(T, st.t + real * 1.1);
+      if (reduceMotion) { for (let k = 0; k <= 80; k++) { const t = T * k / 80; st.recA.push([t, r.c(3, t)]); st.recB.push([t, r.c(boatAt(t), t)]); } }
+      else { st.recA.push([st.t, r.c(3, st.t)]); st.recB.push([st.t, r.c(boatAt(st.t), st.t)]); }
+      draw();
+      if (st.t < T) requestAnimationFrame(step); else finish();
+    }
+    requestAnimationFrame(step);
+  });
+
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R]; let pts = 0, msg;
+    if (r.motor) {
+      const err = Math.abs(st.v - r.vstar); pts = err < 0.051 ? 20 : err < 0.31 ? 10 : 0;
+      const rate = -0.15 + 0.1 * st.v;
+      msg = (pts === 20 ? 'Steady. ' : pts ? 'Close: ' : 'Not steady: ') + 'at \\(v=' + st.v.toFixed(1) + '\\) the boat records \\(-0.15+0.1v=' + rate.toFixed(2) + '\\) per second. Steady needs \\(v=1.5\\).';
+    } else {
+      const tA = classify(st.recA), tB = classify(st.recB);
+      const okA = st.pA === tA, okB = st.pB === tB; pts = (okA ? 10 : 0) + (okB ? 10 : 0);
+      for (const [box, truth, pick] of [[$('chA'), tA, st.pA], [$('chB'), tB, st.pB]])
+        box.querySelectorAll('.choice').forEach(c => { if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === pick) c.classList.add('wrong'); });
+      msg = pts === 20 ? 'Both right.' : pts === 10 ? (okA ? 'Probe right, boat wrong.' : 'Boat right, probe wrong.') : 'Both wrong this time.';
+    }
+    results[R] = pts; if (pts === 20) snd.ok(); else snd.no();
+    $('result').innerHTML = msg + ' +' + pts; $('result').className = 'result ' + (pts === 20 ? 'ok' : pts ? '' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([$('result'), db]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else {
+      const tot = results.reduce((a, s) => a + (s || 0), 0), mx = ROUNDS.length * 20, fr = tot / mx;
+      const v = fr === 1 ? ['🏆⛵', 'Perfect. Captain of the material derivative.'] : fr >= 0.7 ? ['⛵👍', 'Seaworthy. One term slipped past you.'] : fr >= 0.4 ? ['🚣🤔', 'Still afloat. Which observer records which term?'] : ['🫧🛟', 'Took on water. Re-read the river example in §2.5.'];
+      $('emo').textContent = v[0]; $('emo').className = 'emo' + (fr >= 0.7 ? ' bob' : ''); 
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; typeset([$('final')]);
+    }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
