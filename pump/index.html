@@ -1,0 +1,293 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Start the Pump</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. One or two channels solved live (1D diffusion), a gauge of centre speed, A/B/C shapes or text options. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --ca: #7D3C98; --cb: #009E73; --cc: #E8A33D;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font: 700 15px/1 var(--font-body); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+.legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.g h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+.bar { height: 16px; border-radius: 8px; background: color-mix(in srgb, var(--line) 50%, transparent); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--flow); width: 0; }
+.g .val { font-size: 15px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choices.wide { grid-template-columns: 1fr; }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 12px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.choices.wide .choice { flex-direction: row; justify-content: flex-start; gap: 10px; text-align: left; padding: 10px 12px; }
+.choice .sw { width: 26px; height: 26px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.pump { display: inline-block; animation: pump 1.2s ease-in-out infinite; }
+@keyframes pump { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .emo.pump { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Velocity profile across a channel, computed live"></canvas>
+  </div>
+  <div class="legend" id="cap"></div>
+  <div class="gauges" id="gauges">
+    <div class="g"><h2 id="gh1">Centre speed, as a fraction of the final value</h2><div class="bar"><i id="bar1"></i></div><div class="val" id="val1"></div></div>
+    <div class="g" id="g2" hidden><h2 id="gh2"></h2><div class="bar"><i id="bar2"></i></div><div class="val" id="val2"></div></div>
+  </div>
+
+  <section class="card" id="card">
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Switch on</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, unsteady channel flow · prototype</p>
+</div>
+
+<script>
+(function () {
+  // ∂u/∂t = G + ν ∂²u/∂y² on −H/2 < y < H/2 with u = 0 at the walls (ρ = 1). Explicit finite differences, N cells.
+  function Solver(H, nu, G, N) {
+    const dy = H / N, y = Array.from({ length: N + 1 }, (_, i) => -H / 2 + i * dy);
+    const s = { H, nu, G, N, dy, y, u: new Float64Array(N + 1), t: 0, uSteady: y.map(v => G / (2 * nu) * (H * H / 4 - v * v)), umax: G * H * H / (8 * nu) };
+    s.step = T => { const dt = 0.4 * dy * dy / nu; let tt = 0; const n = N; while (tt < T) { const u = s.u, h = Math.min(dt, T - tt); const un = new Float64Array(u); for (let i = 1; i < n; i++) un[i] = u[i] + h * (s.G + nu * (u[i + 1] - 2 * u[i] + u[i - 1]) / (dy * dy)); s.u = un; tt += h; } s.t += T; };
+    s.centre = () => s.u[N >> 1] / s.umax;
+    s.setSteady = () => { s.u = Float64Array.from(s.uSteady); };
+    return s;
+  }
+  const ROUNDS = [
+    {
+      title: 'Switch on the pump', brief: 'A channel of fluid at rest. At \\(t=0\\) a pump imposes a constant pressure gradient. <b>Shortly after</b>, well before the flow has settled, what shape is the velocity profile?',
+      q: 'Which shape, soon after switch-on?', mode: 'on', nu: 0.05, H: 2, tShow: 0.4, speed: 0.12, speed2: 5,
+      cands: [{ k: 'A', f: y => 1 - y * y }, { k: 'B', f: y => Math.pow(1 - y * y, 0.12), ok: true }, { k: 'C', f: y => 1 - Math.abs(y) }],
+      debrief: ['Plug-like. The pressure gradient accelerates every layer equally, \\(\\partial u/\\partial t=-\\frac1\\rho\\,\\mathrm{d}p/\\mathrm{d}x\\), so the core moves like a solid slab. Only fluid within \\(\\sqrt{\\nu t}\\) of a wall knows the wall is there.', 'The parabola is what you get <em>after</em> the two wall layers have diffused across and met in the middle, a time of order \\(H^2/\\nu\\). Watch the gauge: the centre speed keeps rising long after the shape looks parabolic.']
+    },
+    {
+      title: 'Switch it off', brief: 'The flow has settled to its parabola. At \\(t=0\\) the pump is switched off. In the first instant, which fluid <b>decelerates fastest</b>?',
+      q: 'In the first instant…', mode: 'off', nu: 0.05, H: 2, tShow: 1.5, speed: 0.6, speed2: 3,
+      opts: [{ k: 'The fast fluid in the centre', v: 'core' }, { k: 'The slow fluid near the walls', v: 'wall' }, { k: 'All of it, at the same rate', v: 'same', ok: true }],
+      debrief: ['The same rate everywhere. With the pump off, \\(\\partial u/\\partial t=\\nu\\,\\partial^2u/\\partial y^2\\), and the curvature of a parabola is the same at every \\(y\\). The whole profile drops by the same amount, which is why the near-wall fluid stops first: it had less to lose.', 'The orange curve is the deceleration \\(-\\partial u/\\partial t\\) across the channel. It is flat at first, then bends as the profile stops being a parabola.']
+    },
+    {
+      title: 'Wide and narrow', brief: 'Two channels, one <b>twice as wide</b> as the other, same fluid, same pump. Both are switched on at \\(t=0\\). Which settles to its steady flow first, and by how much?',
+      q: 'Which settles first?', mode: 'two', nu: 0.05, H: 2, H2: 4, speed: 9,
+      opts: [{ k: 'The narrow one, about twice as fast', v: 'n2' }, { k: 'The narrow one, about four times as fast', v: 'n4', ok: true }, { k: 'The wide one: more pressure force acts on more fluid', v: 'w' }, { k: 'Both at the same time: same fluid, same pump', v: 'same' }],
+      debrief: ['Four times as fast. The only timescale in \\(\\partial u/\\partial t=G+\\nu\\,\\partial^2u/\\partial y^2\\) is \\(H^2/\\nu\\): the wall layers have twice as far to diffuse and diffusion goes like the square of the distance.', 'The wide channel also ends up four times faster in the middle, \\(u_{\\max}\\propto H^2\\), so it is accelerating towards a bigger target for a longer time.']
+    },
+    {
+      title: 'Water and syrup', brief: 'Two identical channels, same pump. One holds water, the other a fluid with <b>ten times the viscosity</b>. Both switched on at \\(t=0\\). Which settles first?',
+      q: 'Which settles first?', mode: 'two', nu: 0.05, nu2: 0.5, H: 2, H2: 2, speed: 3,
+      opts: [{ k: 'Water: less viscous, so it responds faster', v: 'water' }, { k: 'The syrup, about ten times faster', v: 'syrup', ok: true }, { k: 'The syrup, about three times faster', v: 'syrup3' }, { k: 'Both at the same time', v: 'same' }],
+      debrief: ['The viscous one, ten times faster: \\(H^2/\\nu\\) is ten times shorter. Viscosity is what carries the influence of the walls into the fluid, so a more viscous fluid feels its walls sooner.', 'It also ends up ten times slower, \\(u_{\\max}\\propto1/\\nu\\). Fast to settle and slow to flow are the same fact.']
+    }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CCOL = { A: '--ca', B: '--cb', C: '--cc' };
+  let R = 0, st, results = ROUNDS.map(() => null), runId = 0;
+  $('max').textContent = ROUNDS.length * 10;
+
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      motor(onOff) { if (onOff) { tone(70, 0, 1.6, 'sawtooth', 0.06, 140); tone(141, 0, 1.6, 'square', 0.02, 282); } else { tone(140, 0, 1.4, 'sawtooth', 0.06, 50); } },
+      ding() { tone(1319, 0, 0.5, 'sine', 0.12); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function fresh() { const r = ROUNDS[R]; const s = { phase: 'predict', choice: null, running: false, s1: Solver(r.H, r.nu, 1, 64), s2: r.mode === 'two' ? Solver(r.H2, r.nu2 || r.nu, 1, 64) : null, done1: null, done2: null, u0: null, decel: null, decel0: null };
+    if (r.mode === 'off') s.s1.setSteady(); return s; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).then(placeLabels).catch(() => {}); }
+
+  let W = 300, H = 230;
+  function size() { W = stage.clientWidth; H = Math.round(Math.min(260, Math.max(200, W * 0.62))); const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); placeLabels(); }
+  const WALL = 16;
+  function hatch(x0, x1, y0, y1, up) {
+    ctx.strokeStyle = css('--wall'); ctx.lineWidth = 1.2; ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+    for (let x = x0 - 20; x < x1 + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); }
+    ctx.restore(); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, up ? y1 : y0); ctx.lineTo(x1, up ? y1 : y0); ctx.stroke();
+  }
+  // draw one channel in the box [x0,x1]; profile normalised: the x-extent of u_max(steady) is 80% of the box
+  function channel(x0, x1, s, Hpx, opts) {
+    const top = (H - Hpx) / 2, bot = top + Hpx, left = x0 + 12, span = (x1 - x0) * 0.78;
+    hatch(x0, x1, top - WALL, top, true); hatch(x0, x1, bot, bot + WALL, false);
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, bot); ctx.stroke(); ctx.setLineDash([]);
+    const sy = y => top + (0.5 - y / s.H) * Hpx;
+    const norm = opts.norm === 'now' ? Math.max(s.u[s.N >> 1], 1e-9) : s.umax;
+    if (opts.cands) opts.cands.forEach(c => { ctx.strokeStyle = css(CCOL[c.k]); ctx.lineWidth = st.choice === c.k ? 4 : 2.5; ctx.setLineDash([6, 5]); ctx.globalAlpha = st.phase === 'predict' ? 0.9 : 0.35; ctx.beginPath(); for (let i = 0; i <= 60; i++) { const y = -1 + 2 * i / 60; const x = left + span * c.f(y); i ? ctx.lineTo(x, sy(y * s.H / 2)) : ctx.moveTo(x, sy(y * s.H / 2)); } ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; });
+    if (opts.ghost) { ctx.strokeStyle = css('--muted'); ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.beginPath(); opts.ghost.forEach((v, i) => { const x = left + span * v / norm; i ? ctx.lineTo(x, sy(s.y[i])) : ctx.moveTo(x, sy(s.y[i])); }); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.strokeStyle = css('--flow'); ctx.lineWidth = 3.5; ctx.beginPath(); s.u.forEach((v, i) => { const x = left + span * v / norm; i ? ctx.lineTo(x, sy(s.y[i])) : ctx.moveTo(x, sy(s.y[i])); }); ctx.stroke();
+    ctx.fillStyle = css('--flow'); for (let i = 0; i <= s.N; i += 4) { ctx.beginPath(); ctx.arc(left + span * s.u[i] / norm, sy(s.y[i]), 2.5, 0, 2 * Math.PI); ctx.fill(); }
+    for (const [d, dash] of [[opts.decel, []], [opts.decel2, [4, 4]]]) if (d) { ctx.strokeStyle = css('--dye'); ctx.lineWidth = 2.5; ctx.setLineDash(dash); const m = Math.max(...opts.decel.map(Math.abs), 1e-9); ctx.beginPath(); d.forEach((v, i) => { const x = left + span * 0.5 * v / m; i ? ctx.lineTo(x, sy(s.y[i])) : ctx.moveTo(x, sy(s.y[i])); }); ctx.stroke(); ctx.setLineDash([]); }
+    return { top, bot, left, span, sy };
+  }
+  function draw() {
+    const r = ROUNDS[R]; ctx.clearRect(0, 0, W, H);
+    if (r.mode === 'two') {
+      ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2, 6); ctx.lineTo(W / 2, H - 6); ctx.stroke();
+      const hp1 = r.H2 > r.H ? (H - 2 * WALL - 20) * 0.5 : H - 2 * WALL - 20, hp2 = r.H2 > r.H ? H - 2 * WALL - 20 : hp1;
+      channel(0, W / 2, st.s1, hp1, {}); channel(W / 2, W, st.s2, hp2, {});
+      $('cap').innerHTML = r.H2 > r.H ? '<span>left: narrow</span><span>right: twice as wide</span>' : '<span>left: water</span><span>right: ten times the viscosity</span>';
+    } else if (r.mode === 'on') {
+      channel(0, W, st.s1, H - 2 * WALL - 20, { norm: 'now', cands: r.cands });
+      $('cap').innerHTML = '<span>profile shape, scaled to the centre speed</span>';
+    } else {
+      channel(0, W, st.s1, H - 2 * WALL - 20, { ghost: st.u0, decel: st.decel0, decel2: st.decel });
+      $('cap').innerHTML = st.decel ? '<span>dashed: profile at switch-off</span><span style="color:var(--dye)">orange: deceleration in the first instant</span>' : '';
+    }
+    const c1 = st.s1.centre(); $('bar1').style.width = Math.min(100, 100 * c1) + '%'; $('val1').textContent = (100 * c1).toFixed(0) + '%' + (st.done1 !== null ? ' · settled at t = ' + st.done1.toFixed(1) : ' · t = ' + st.s1.t.toFixed(1));
+    if (st.s2) { const c2 = st.s2.centre(); $('bar2').style.width = Math.min(100, 100 * c2) + '%'; $('val2').textContent = (100 * c2).toFixed(0) + '%' + (st.done2 !== null ? ' · settled at t = ' + st.done2.toFixed(1) : ' · t = ' + st.s2.t.toFixed(1)); }
+  }
+  const labels = [];
+  function makeLabels() { labels.length = 0; stage.querySelectorAll('.lab').forEach(e => e.remove()); (ROUNDS[R].cands || []).forEach(c => { const e = document.createElement('div'); e.className = 'lab'; e.textContent = c.k; e.style.background = css(CCOL[c.k]); stage.append(e); labels.push([c, e]); }); }
+  function placeLabels() { const r = ROUNDS[R]; if (!r.cands) return; const Hpx = H - 2 * WALL - 20, top = (H - Hpx) / 2, left = 12, span = W * 0.78; labels.forEach(([c, e], i) => { const yl = [0.0, 0.62, -0.62][i]; e.style.left = (left + span * c.f(yl) + 16) + 'px'; e.style.top = (top + (0.5 - yl / 2) * Hpx) + 'px'; }); }
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0); }
+  function showFinal(on) { for (const sel of ['#stage', '#gauges', '#brief', '#cap']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    runId++; R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('q').textContent = r.q;
+    $('g2').hidden = r.mode !== 'two'; $('gh1').textContent = r.mode === 'two' ? (r.H2 > r.H ? 'Narrow: centre speed, fraction of final' : 'Water: centre speed, fraction of final') : r.mode === 'off' ? 'Centre speed, as a fraction of the initial value' : 'Centre speed, as a fraction of the final value';
+    $('gh2').textContent = r.H2 > r.H ? 'Wide: centre speed, fraction of final' : 'Syrup: centre speed, fraction of final';
+    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (r.opts ? ' wide' : '');
+    const items = r.cands ? r.cands.map(c => ({ k: 'Curve ' + c.k, v: c.k, sw: c.k })) : r.opts.map(o => ({ k: o.k, v: o.v }));
+    items.forEach(it => { const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = it.v; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = (it.sw ? '<span class="sw" style="background:' + css(CCOL[it.sw]) + '">' + it.sw + '</span>' : '') + it.k;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = it.v; $('go').disabled = false; draw(); }; box.append(b); });
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true; $('go').textContent = r.mode === 'off' ? 'Switch off' : 'Switch on';
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    makeLabels(); renderDots(); size(); typeset([$('brief')]);
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    const r = ROUNDS[R]; st.phase = 'run'; $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    snd.motor(r.mode !== 'off');
+    if (r.mode === 'off') { st.s1.G = 0; st.u0 = Float64Array.from(st.s1.u); }
+    let last = performance.now(), revealed = false; const myRun = ++runId;
+    function frame(now) {
+      if (myRun !== runId) return;
+      const real = Math.min(0.05, (now - last) / 1000); last = now; const dt = (reduceMotion ? 3 : 1) * real * (revealed && r.speed2 ? r.speed2 : r.speed);
+      if (r.mode === 'on') { st.s1.step(dt); if (!revealed && st.s1.t >= r.tShow) { revealed = true; finish(); } draw(); if (st.s1.centre() < 0.97) requestAnimationFrame(frame); else { st.done1 = st.s1.t; draw(); } }
+      else if (r.mode === 'off') { const before = Float64Array.from(st.s1.u); st.s1.step(dt); st.decel = Array.from(st.s1.u, (v, i) => (before[i] - v) / dt); if (!st.decel0) st.decel0 = st.decel; if (!revealed) { revealed = true; finish(); } draw(); if (st.s1.centre() > 0.05 && st.s1.t < r.tShow * 6) requestAnimationFrame(frame); }
+      else { st.s1.step(dt); st.s2.step(dt); if (st.done1 === null && st.s1.centre() >= 0.95) { st.done1 = st.s1.t; snd.ding(); } if (st.done2 === null && st.s2.centre() >= 0.95) { st.done2 = st.s2.t; snd.ding(); } draw(); if (st.done1 === null || st.done2 === null) requestAnimationFrame(frame); else if (!revealed) { revealed = true; finish(); } }
+    }
+    requestAnimationFrame(frame);
+  });
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R];
+    const truth = r.cands ? r.cands.find(c => c.ok).k : r.opts.find(o => o.ok).v, ok = st.choice === truth; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { c.disabled = true; if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    let extra = '';
+    if (r.mode === 'two') extra = ' Settled at \\(t=' + st.done1.toFixed(1) + '\\) and \\(t=' + st.done2.toFixed(1) + '\\): ratio ' + (st.done2 / st.done1).toFixed(1) + '.';
+    $('result').innerHTML = (ok ? 'Right. +10' : 'Not this time. +0') + extra; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([db, $('result')]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🚰' : fr >= 0.7 ? '🚰' : fr >= 0.4 ? '🫧' : '🔧'; $('emo').className = 'emo' + (fr >= 0.7 ? ' pump' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
