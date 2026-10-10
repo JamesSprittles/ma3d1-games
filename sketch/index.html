@@ -1,0 +1,272 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Sketch the Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Draw the velocity profile with a finger; the exact solution is overlaid and the sketch is scored. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: #E8A33D; border-color: #E8A33D; }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; }
+.stage { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; touch-action: none; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font-size: 15px; color: var(--muted); white-space: nowrap; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 4px; border-radius: 4px; }
+.lab.blue { color: var(--flow); }
+.lab.orange { color: var(--dye); }
+.hint { position: absolute; inset: auto 0 10px 0; text-align: center; color: var(--muted); font-size: 15px; pointer-events: none; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.ghost { flex: 0 0 auto; font: 600 16px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: transparent; color: var(--ink); border: 1.5px solid var(--line); cursor: pointer; }
+button:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.mid { color: #B07A14; font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 5px; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.draw { display: inline-block; animation: draw 1.6s ease-in-out infinite; }
+@keyframes draw { 0%, 100% { transform: translateX(-10px) rotate(-6deg); } 50% { transform: translateX(10px) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .emo.draw { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Velocity profile: draw it with your finger from the bottom wall to the top"></canvas>
+    <div class="hint" id="hint">draw \(u(y)\) from the bottom to the top</div>
+  </div>
+  <div class="legend" id="legend" hidden><span><i style="border-color:var(--dye)"></i>your sketch</span><span><i style="border-color:var(--flow)"></i>exact</span></div>
+
+  <section class="card" id="card">
+    <div class="actions">
+      <button class="ghost" id="clear">Clear</button>
+      <button class="primary" id="go" disabled>Check it</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, one-dimensional flows · prototype</p>
+</div>
+
+<script>
+(function () {
+  function erfc(x) { const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s > 0 ? 1 - y : 1 + y; }
+  // Each round: domain y in [0, ymax] (bottom to top), exact u(y)/U, axis range for u/U, wall arrows, anchors (BC values the sketch is pinned to), feature checks that name the misconception.
+  const ROUNDS = [
+    {
+      title: 'Both walls slide together', ymax: 1, range: [-0.3, 1.6], walls: { bot: 1, top: 1 }, pressure: 0,
+      brief: 'Top and bottom wall both move to the right at \\(U\\). No pressure gradient. Draw the steady profile \\(u(y)\\) between them.',
+      exact: s => 1,
+      feats(u) { const mid = Math.max(...u.slice(10, 50)), lo = Math.min(...u.slice(10, 50)); if (mid > 1.15) return 'You drew a bulge. Curvature needs a pressure gradient: \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x=0\\) here, so the profile is a straight line through the two wall values.'; if (lo < 0.85) return 'You drew a sag. Nothing is holding this fluid back: \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x=0\\), so the profile is the straight line through the two wall values.'; return null; },
+      debrief: ['A plug: the whole fluid moves with the walls, \\(u\\equiv U\\). The one-dimensional momentum equation is \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x\\), so <b>the curvature of the profile is the pressure gradient</b>. No gradient, no curvature: a straight line through the wall values, and here that line is flat.', 'There is no shear, so no viscous stress anywhere and the walls feel no force. Moving a sealed box of fluid costs nothing once it is going.']
+    },
+    {
+      title: 'Lid dragged, pressure pushing back', ymax: 1, range: [-0.3, 1.6], walls: { bot: 0, top: 1 }, pressure: -1,
+      brief: 'The top wall moves right at \\(U\\), the bottom wall is fixed, and the pressure <b>rises</b> along the channel, \\(\\mathrm{d}p/\\mathrm{d}x=2\\mu U/H^2>0\\), so it pushes the fluid back to the left. Draw \\(u(y)\\).',
+      exact: s => s * s,
+      feats(u) { const s = 0.5, v = u[30]; if (v > 0.6) return 'You put the bulge on the wrong side. A gradient that pushes left makes \\(u^{\\prime\\prime}>0\\): the profile sags <em>below</em> the straight Couette line.'; if (Math.abs(v - 0.5) < 0.08 && Math.abs(u[15] - 0.25) < 0.08) return 'You drew the straight line of pure Couette flow. The pressure gradient bends it: \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x>0\\).'; return null; },
+      debrief: ['\\(u=U\\,(y/H)^2\\): the Couette line bent downwards by the adverse gradient, since \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x>0\\). The two ingredients add: a linear part from the lid and a parabola from the pressure.', 'This particular gradient is special: \\(u^{\\prime}(0)=0\\), so the fixed wall feels <b>no stress at all</b>. Push a little harder and the fluid next to it starts going backwards, which is the next round.']
+    },
+    {
+      title: 'Wind over a sealed channel', ymax: 1, range: [-0.6, 1.3], walls: { bot: 0, top: 1 }, pressure: -3,
+      brief: 'The lid moves right at \\(U\\), the bottom is fixed, and the channel is <b>sealed at both ends</b>, so the net flux through any cross-section is zero. Draw \\(u(y)\\).',
+      exact: s => s * (3 * s - 2),
+      feats(u) { const mn = Math.min(...u); if (mn > -0.08) return 'No return flow. The channel is sealed, so whatever the lid drags to the right must come back to the left lower down: the pressure gradient that builds up drives a backflow near the fixed wall.'; let z = -1; for (let i = 5; i < 60; i++) if (u[i] <= 0 && u[i + 1] > 0) z = i / 60; if (z > 0 && Math.abs(z - 2 / 3) > 0.15) return 'Right idea, wrong proportions: zero net flux puts the reversal at \\(y=2H/3\\), with the backflow peaking at \\(-U/3\\).'; return null; },
+      debrief: ['\\(u=U\\,s(3s-2)\\) with \\(s=y/H\\): forward in the top third, backward below \\(y=2H/3\\), reaching \\(-U/3\\). The lid drags fluid right; the sealed ends make pressure build up until the gradient \\(\\mathrm{d}p/\\mathrm{d}x=6\\mu U/H^2\\) sends exactly as much back. This is wind over a lake, or the cross-section of a lid-driven cavity.', 'Three rounds, one equation: \\(\\mu\\,u^{\\prime\\prime}=\\mathrm{d}p/\\mathrm{d}x\\) with wall values fixed. Straight line, sag, reversal: only the size of the constant changes.']
+    },
+    {
+      title: 'Four times later', ymax: 8, range: [-0.15, 1.15], walls: { bot: 1 }, stokes: true, ghostT: 1,
+      brief: 'Stokes\' first problem: the wall at the bottom started moving at \\(U\\) at \\(t=0\\). The grey curve is the profile at \\(t=1\\) (with \\(\\nu=1\\)). Draw the profile at \\(t=4\\).',
+      exact: y => erfc(y / (2 * Math.sqrt(4))),
+      feats(u) { let yh = -1; for (let i = 0; i < 60; i++) if (u[i] >= 0.5 && u[i + 1] < 0.5) { yh = 8 * (i + 0.5) / 60; break; } if (yh < 0) return null; if (yh > 3.0) return 'You stretched it by four. The layer grows like \\(\\sqrt{\\nu t}\\), so four times the time is only <b>twice</b> the height.'; if (yh < 1.35) return 'You left it where it was. The layer never stops growing: \\(\\delta\\sim\\sqrt{\\nu t}\\).'; return null; },
+      debrief: ['Twice as tall, same shape: \\(u=U\\,\\mathrm{erfc}\\big(y/2\\sqrt{\\nu t}\\big)\\), so \\(t\\to4t\\) is \\(y\\to2y\\). The half-speed height moves from \\(y=0.95\\) to \\(1.91\\).', 'That is what self-similar means: there is no profile shape at \\(t=4\\) that is new, just the \\(t=1\\) shape stretched by \\(\\sqrt{4}\\). The problem has no length of its own, so \\(\\sqrt{\\nu t}\\) is the only one available.']
+    },
+    {
+      title: 'The wall stops dead', ymax: 8, range: [-0.15, 1.15], walls: { bot: 0 }, stokes: true, far: 1,
+      brief: 'The fluid has been sliding with its wall at \\(U\\) for a very long time, so all of it moves at \\(U\\). At \\(t=0\\) the wall <b>stops</b>. Draw the profile at \\(t=1\\) (\\(\\nu=1\\)).',
+      exact: y => 1 - erfc(y / 2),
+      feats(u) { let yh = -1; for (let i = 0; i < 60; i++) if (u[i] < 0.5 && u[i + 1] >= 0.5) { yh = 8 * (i + 0.5) / 60; break; } if (yh < 0) return 'The far fluid has not heard the news: it is still doing \\(U\\). Only a layer of thickness \\(\\sim\\sqrt{\\nu t}\\) by the wall has slowed.'; if (yh > 2.2) return 'Your slowed layer is too thick: after \\(t=1\\) the wall\'s stopping has only reached \\(y\\sim\\sqrt{\\nu t}\\), the half-speed point is at \\(y=0.95\\).'; return null; },
+      debrief: ['\\(u=U\\,\\mathrm{erf}\\big(y/2\\sqrt{\\nu t}\\big)=U-U\\,\\mathrm{erfc}(\\cdots)\\): the same layer as round 4, upside down. The equation is linear, so stopping the wall is starting it in reverse, added to a uniform stream.', 'Most of the fluid is still moving at \\(U\\): the wall\'s change of mind spreads only as \\(\\sqrt{\\nu t}\\). Compare the wall stress: it is infinite at the instant of stopping, just as at starting, \\(\\mu U/\\sqrt{\\pi\\nu t}\\).']
+    }
+  ];
+  const NB = 60;                                          // bins in y
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      mid() { tone(440, 0, 0.15, 'triangle', 0.15); tone(523, 0.15, 0.25, 'triangle', 0.15); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      scribble() { tone(1400 + Math.random() * 600, 0, 0.03, 'square', 0.02); },
+      final(fr) {
+        if (fr >= 0.9) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.6) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.3) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+
+  // ---------- geometry ----------
+  let W = 300, H = 320, G;
+  function geom() { const r = ROUNDS[R]; const padL = 34, padR = 16, top = r.stokes ? 22 : 30, bot = H - (r.stokes ? 22 : 30); const [u0, u1] = r.range; return { padL, padR, top, bot, x: u => padL + (W - padL - padR) * (u - u0) / (u1 - u0), y: yy => bot - (bot - top) * yy / r.ymax, yOf: py => (bot - py) / (bot - top) * r.ymax, uOf: px => u0 + (px - padL) / (W - padL - padR) * (u1 - u0) }; }
+  function size() { W = stage.clientWidth; H = Math.round(Math.min(360, Math.max(260, W * 0.85))); const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); G = geom(); window.__geom = () => ({ padL: G.padL, padR: G.padR, top: G.top, bot: G.bot, W, ymax: ROUNDS[R].ymax, u0: ROUNDS[R].range[0], u1: ROUNDS[R].range[1] }); draw(); placeLabels(); }
+  function hatch(y0, y1) { ctx.save(); ctx.beginPath(); ctx.rect(0, y0, W, y1 - y0); ctx.clip(); ctx.strokeStyle = css('--wall'); ctx.lineWidth = 1.2; for (let x = -20; x < W + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); } ctx.restore(); }
+  function arrow(x0, y0, x1, y1, col, w) { ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); const a = Math.atan2(y1 - y0, x1 - x0), h = 9; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - h * Math.cos(a - 0.5), y1 - h * Math.sin(a - 0.5)); ctx.lineTo(x1 - h * Math.cos(a + 0.5), y1 - h * Math.sin(a + 0.5)); ctx.closePath(); ctx.fill(); }
+  function curve(f, col, w, dash, ymax, n) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.beginPath(); for (let i = 0; i <= n; i++) { const yy = ymax * i / n, px = G.x(f(yy)), py = G.y(yy); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); ctx.setLineDash([]); }
+  function draw() {
+    const r = ROUNDS[R]; ctx.clearRect(0, 0, W, H);
+    // walls
+    hatch(G.bot, G.bot + 18); ctx.strokeStyle = css('--wall'); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, G.bot); ctx.lineTo(W, G.bot); ctx.stroke();
+    if (!r.stokes) { hatch(G.top - 18, G.top); ctx.beginPath(); ctx.moveTo(0, G.top); ctx.lineTo(W, G.top); ctx.stroke(); }
+    // u = 0 line and axis
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(G.x(0), G.top); ctx.lineTo(G.x(0), G.bot); ctx.stroke(); ctx.setLineDash([]);
+    if (r.stokes) { ctx.beginPath(); ctx.moveTo(G.x(1), G.top); ctx.lineTo(G.x(1), G.bot); ctx.stroke(); }
+    // wall motion arrows
+    const wa = (yy, v) => { if (!v) return; const px = G.x(0), L = (G.x(1) - G.x(0)) * 0.9; arrow(px, yy, px + L * v, yy, css('--key'), 3); };
+    wa(G.bot + 9, r.walls.bot); if (!r.stokes) wa(G.top - 9, r.walls.top);
+    // pressure gradient arrow (in the fluid, mid-height, far right)
+    if (r.pressure) { const yy = (G.top + G.bot) / 2, L = 34, x1 = W - 16 - L; arrow(x1, yy, x1 + L, yy, css('--muted'), 2.5); }   // arrow shows the direction of grad p, as in the notes' figures
+    // ghost (previous time) for Stokes round 4
+    if (r.ghostT) curve(yy => erfc(yy / (2 * Math.sqrt(r.ghostT))), css('--muted'), 2, [5, 5], r.ymax, 80);
+    // anchors
+    ctx.fillStyle = css('--ink'); const anchors = [[0, r.walls.bot]]; if (!r.stokes) anchors.push([r.ymax, r.walls.top]); else anchors.push([r.ymax, r.far || 0]);
+    anchors.forEach(([yy, v]) => { ctx.beginPath(); ctx.arc(G.x(v), G.y(yy), 5, 0, 2 * Math.PI); ctx.fill(); });
+    // the sketch
+    if (st.pts.length > 1) { ctx.strokeStyle = css('--dye'); ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath(); st.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); }
+    if (st.phase === 'done') {
+      if (st.us) curve(yy => st.us[Math.min(NB, Math.round(yy / r.ymax * NB))], css('--dye'), 3, [], r.ymax, NB);
+      curve(yy => r.exact(r.stokes ? yy : yy / r.ymax), css('--flow'), 3.5, [], r.ymax, 120);
+    }
+  }
+  const labels = [];
+  function makeLabels() { stage.querySelectorAll('.lab').forEach(e => e.remove()); labels.length = 0; const r = ROUNDS[R];
+    const add = (tex, cls) => { const e = document.createElement('div'); e.className = 'lab'; e.dataset.k = cls; e.innerHTML = tex; stage.append(e); labels.push(e); return e; };
+    add('\\(y\\)', 'ly'); add('\\(u\\)', 'lu'); add(r.stokes ? '\\(u=U\\)' : '\\(U\\)', 'u1'); if (r.ghostT) add('\\(t=1\\)', 'ghost'); if (r.pressure) add('\\(\\nabla p\\)', 'press'); typeset(labels); placeLabels(); }
+  function placeLabels() { const r = ROUNDS[R]; if (!G) return; labels.forEach(e => { const k = e.dataset.k;
+    if (k === 'ly') { e.style.left = (G.padL - 16) + 'px'; e.style.top = (r.stokes ? G.top + 10 : G.top + 24) + 'px'; }
+    else if (k === 'lu') { e.style.left = (G.x(0) + 14) + 'px'; e.style.top = (G.bot - 12) + 'px'; }
+    else if (k === 'u1') { e.style.left = (G.x(1) + (r.stokes ? -32 : 24)) + 'px'; e.style.top = (r.stokes ? G.top + 10 : G.top - 9) + 'px'; }
+    else if (k === 'ghost') { e.style.left = G.x(0.2) + 'px'; e.style.top = G.y(0.9) + 'px'; }
+    else if (k === 'press') { e.style.left = (W - 34) + 'px'; e.style.top = ((G.top + G.bot) / 2 - 18) + 'px'; } }); }
+  // ---------- drawing input ----------
+  let drawing = false;
+  const pos = ev => { const b = cv.getBoundingClientRect(); return [ev.clientX - b.left, ev.clientY - b.top]; };
+  cv.addEventListener('pointerdown', ev => { if (st.phase !== 'draw') return; drawing = true; cv.setPointerCapture(ev.pointerId); st.pts = [pos(ev)]; $('hint').hidden = true; draw(); });
+  cv.addEventListener('pointermove', ev => { if (!drawing) return; const p = pos(ev); const q = st.pts[st.pts.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 2) return; st.pts.push(p); if (st.pts.length % 6 === 0) snd.scribble(); draw(); });
+  const stop = () => { if (!drawing) return; drawing = false; $('go').disabled = st.pts.length < 8; };
+  cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+  // sketch -> u(y) on NB+1 bins, pinned to the anchors
+  function sample() {
+    const r = ROUNDS[R], bins = Array.from({ length: NB + 1 }, () => []);
+    st.pts.forEach(([px, py]) => { const yy = G.yOf(py); const i = Math.round(yy / r.ymax * NB); if (i >= 0 && i <= NB) bins[i].push(G.uOf(px)); });
+    const u = bins.map(b => b.length ? b.reduce((a, v) => a + v, 0) / b.length : null);
+    const covered = u.filter(v => v !== null).length / (NB + 1);
+    u[0] = r.walls.bot; u[NB] = r.stokes ? (r.far || 0) : r.walls.top;
+    for (let i = 1; i < NB; i++) if (u[i] === null) { let j = i + 1; while (u[j] === null) j++; const a = u[i - 1], b = u[j]; for (let k = i; k < j; k++) u[k] = a + (b - a) * (k - i + 1) / (j - i + 1); i = j; }
+    return { u, covered };
+  }
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] >= 8 ? 'right' : results[i] >= 4 ? 'half' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s || 0), 0); }
+  function load(i) {
+    R = i; st = { phase: 'draw', pts: [], us: null }; const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; $('stage').hidden = false; $('brief').hidden = false; $('legend').hidden = true; $('hint').hidden = false;
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
+    $('go').disabled = true; $('go').hidden = false; $('clear').hidden = false; $('next').hidden = true; $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); size(); makeLabels(); typeset([$('brief'), $('hint')]);
+  }
+  $('clear').addEventListener('click', () => { if (st.phase !== 'draw') return; st.pts = []; $('go').disabled = true; $('hint').hidden = false; draw(); });
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'draw' || st.pts.length < 8) return; const r = ROUNDS[R];
+    const { u, covered } = sample(); if (covered < 0.6) { $('result').textContent = 'Draw the whole profile, from the bottom wall to the top.'; $('result').className = 'result no'; return; }
+    st.us = u; st.phase = 'done'; st.pts = [];
+    const ue = u.map((_, i) => r.exact(r.stokes ? r.ymax * i / NB : i / NB));
+    const scale = Math.max(1, ...ue.map(Math.abs));
+    const err = Math.sqrt(u.reduce((a, v, i) => a + (v - ue[i]) ** 2, 0) / (NB + 1)) / scale;
+    const score = Math.max(0, Math.min(10, Math.round(10 * (1 - err / 0.32)))); results[R] = score;
+    const note = r.feats(u);
+    if (score >= 8) snd.ok(); else if (score >= 4) snd.mid(); else snd.no();
+    $('result').innerHTML = (score >= 8 ? 'Nice. ' : score >= 4 ? 'Close. ' : 'Not this one. ') + '+' + score + ' · RMS error ' + err.toFixed(2) + '\\(\\,U\\)' + (note ? '<br>' + note : '');
+    $('result').className = 'result ' + (score >= 8 ? 'ok' : score >= 4 ? 'mid' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false; $('legend').hidden = false;
+    $('go').hidden = true; $('clear').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); draw(); typeset([db, $('result')]);
+  });
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr >= 0.9 ? '🏆✍️' : fr >= 0.6 ? '✍️' : fr >= 0.3 ? '📝' : '🖍️'; $('emo').className = 'emo' + (fr >= 0.6 ? ' draw' : '');
+      $('card').hidden = true; $('stage').hidden = true; $('brief').hidden = true; $('legend').hidden = true; $('final').hidden = false; $('title').textContent = 'Finished'; snd.final(fr); $('finalScore').textContent = tot; window.scrollTo(0, 0); }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => { typeset([document.querySelector('.app')]); });
+})();
+</script>
+</body></html>
