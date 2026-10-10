@@ -1,0 +1,217 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Kill the Terms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. The scenario, then the three equations as rows of tappable term tiles, then Check. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --key: #C0392B; --good: #0B7A55; --kill: #7D3C98;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --key: #F0756A; --good: #4CC79A; --kill: #C39BD3; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --key: #F0756A; --good: #4CC79A; --kill: #C39BD3; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: linear-gradient(90deg, var(--good) 50%, var(--key) 50%); border-color: var(--muted); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.ansatz { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 17px; text-align: center; }
+.eqs { display: flex; flex-direction: column; gap: 8px; }
+.eq { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.eq h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: .02em; text-transform: uppercase; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.op { color: var(--muted); font-size: 18px; padding: 0 1px; }
+.term { font-size: 17px; padding: 8px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; position: relative; line-height: 1; }
+.term[aria-pressed="true"] { border-color: var(--kill); background: color-mix(in srgb, var(--kill) 14%, transparent); text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--kill); }
+.term.ok { border-color: var(--good); }
+.term.miss { border-color: var(--key); border-style: dashed; }
+.term.bad { border-color: var(--key); background: color-mix(in srgb, var(--key) 14%, transparent); }
+.term:disabled { cursor: default; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .term:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); vertical-align: -2px; margin-right: 4px; }
+.legend i.k { border-color: var(--kill); background: color-mix(in srgb, var(--kill) 14%, transparent); }
+.legend i.m { border-color: var(--key); border-style: dashed; }
+.legend i.b { border-color: var(--key); background: color-mix(in srgb, var(--key) 14%, transparent); }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.chop { display: inline-block; animation: chop 1.4s ease-in-out infinite; }
+@keyframes chop { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .emo.chop { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+  <div class="ansatz" id="ansatz"></div>
+
+  <div class="eqs" id="eqs"></div>
+  <div class="legend" id="leg"><span><i class="k"></i>tapped: zero</span><span><i class="m"></i>missed</span><span><i class="b"></i>wrongly killed</span></div>
+
+  <section class="card" id="card">
+    <p class="q">Tap every term that is <em>identically zero</em> for this flow, before using the equations. Leave the rest.</p>
+    <div class="actions">
+      <button class="primary" id="go">Check</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, the Navier–Stokes equations · prototype</p>
+</div>
+
+<script>
+(function () {
+  // Two-dimensional incompressible Navier–Stokes, no body force. Terms in order; "zero" lists the ones that vanish identically for the ansatz.
+  const EQS = [
+    { name: 'x-momentum', lhs: ['\\(\\dfrac{\\partial u}{\\partial t}\\)', '\\(u\\dfrac{\\partial u}{\\partial x}\\)', '\\(v\\dfrac{\\partial u}{\\partial y}\\)'], rhs: ['\\(-\\dfrac1\\rho\\dfrac{\\partial p}{\\partial x}\\)', '\\(\\nu\\dfrac{\\partial^2u}{\\partial x^2}\\)', '\\(\\nu\\dfrac{\\partial^2u}{\\partial y^2}\\)'] },
+    { name: 'y-momentum', lhs: ['\\(\\dfrac{\\partial v}{\\partial t}\\)', '\\(u\\dfrac{\\partial v}{\\partial x}\\)', '\\(v\\dfrac{\\partial v}{\\partial y}\\)'], rhs: ['\\(-\\dfrac1\\rho\\dfrac{\\partial p}{\\partial y}\\)', '\\(\\nu\\dfrac{\\partial^2v}{\\partial x^2}\\)', '\\(\\nu\\dfrac{\\partial^2v}{\\partial y^2}\\)'] },
+    { name: 'mass', lhs: ['\\(\\dfrac{\\partial u}{\\partial x}\\)', '\\(\\dfrac{\\partial v}{\\partial y}\\)'], rhs: [], zeroRhs: true }
+  ];
+  // term ids: x0..x5, y0..y5, m0..m1
+  const ROUNDS = [
+    { title: 'Flow along a channel', brief: 'Steady flow between two parallel walls, driven by a pump along \\(x\\). Nothing varies along the channel except the pressure.',
+      ansatz: '\\(\\underline{u}=(u(y),\\,0),\\qquad p=p(x)\\)',
+      zero: ['x0', 'x1', 'x2', 'x4', 'y0', 'y1', 'y2', 'y4', 'y5', 'm0', 'm1'],
+      debrief: ['What survives: \\(0=-\\frac1\\rho\\,p^\\prime(x)+\\nu u^{\\prime\\prime}(y)\\) in \\(x\\), and \\(0=-\\frac1\\rho\\,\\partial p/\\partial y\\) in \\(y\\). The second is a <em>conclusion</em>, not an assumption: it is why we may write \\(p=p(x)\\).', 'The nonlinear terms did not vanish because the flow is slow. They vanish exactly, because \\(\\underline{u}\\cdot\\nabla\\underline{u}=u\\,\\partial_x(u,0)=0\\) for any \\(u(y)\\). The parabola is an exact solution at every Reynolds number; what fails at high \\(Re\\) is its stability, not the equation.'] },
+    { title: 'Stokes\' first problem', brief: 'A plate under a deep layer of fluid is set moving at \\(t=0\\). The pressure is uniform.',
+      ansatz: '\\(\\underline{u}=(u(y,t),\\,0),\\qquad p=\\text{const}\\)',
+      zero: ['x1', 'x2', 'x3', 'x4', 'y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'm0', 'm1'],
+      debrief: ['What survives: \\(\\partial u/\\partial t=\\nu\\,\\partial^2u/\\partial y^2\\), the diffusion equation. Momentum spreads from the plate the way heat spreads from a hot wall, with no pressure and no inertia terms to complicate it.', 'The only difference from the channel is the time derivative. Same ansatz, same cancellation of \\(\\underline{u}\\cdot\\nabla\\underline{u}\\).'] },
+    { title: 'Stagnation-point flow', brief: 'Steady flow towards a wall at \\(y=0\\), turning to run along it: the field \\(\\underline{u}=(\\alpha x,\\,-\\alpha y)\\) from PS2.',
+      ansatz: '\\(\\underline{u}=(\\alpha x,\\,-\\alpha y),\\qquad \\alpha\\text{ constant}\\)',
+      zero: ['x0', 'x2', 'x4', 'x5', 'y0', 'y1', 'y4', 'y5'],
+      debrief: ['Every viscous term vanishes: the velocity is linear in \\(x\\) and \\(y\\), so its second derivatives are zero. The <em>inertia</em> terms survive: \\(u\\,\\partial u/\\partial x=\\alpha^2x\\) and \\(v\\,\\partial v/\\partial y=\\alpha^2y\\), balanced by a pressure \\(p=p_0-\\tfrac12\\rho\\alpha^2(x^2+y^2)\\).', 'Both mass terms are non-zero; only their sum vanishes. And note the opposite of round 1: here viscosity drops out of the equations even though the fluid is viscous. (It comes back through the no-slip condition at the wall, which this field violates: Chapter 7.)'] },
+    { title: 'Rigid rotation', brief: 'The whole fluid turns like a solid body about the origin, at angular velocity \\(\\Omega\\).',
+      ansatz: '\\(\\underline{u}=(-\\Omega y,\\,\\Omega x)\\)',
+      zero: ['x0', 'x1', 'x4', 'x5', 'y0', 'y2', 'y4', 'y5', 'm0', 'm1'],
+      debrief: ['Viscous terms: all zero, as for any linear velocity field. Inertia: \\(v\\,\\partial u/\\partial y=-\\Omega^2x\\) and \\(u\\,\\partial v/\\partial x=-\\Omega^2y\\), the centripetal acceleration, balanced by \\(p=p_0+\\tfrac12\\rho\\Omega^2r^2\\).', 'Compare with Vevox Q18: no viscous <em>stress</em> at all here, because the rate of strain is zero. In the stagnation flow there is viscous stress (the element is being stretched) but it is uniform, so its divergence, the viscous force, is zero. Stress and viscous force are different questions.'] }
+  ];
+  const $ = id => document.getElementById(id);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      chop(onOff) { tone(onOff ? 220 : 440, 0, 0.06, 'square', 0.05, onOff ? 110 : 330); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+
+  function buildEqs() {
+    const box = $('eqs'); box.innerHTML = '';
+    EQS.forEach((eq, qi) => {
+      const pre = ['x', 'y', 'm'][qi];
+      const card = document.createElement('div'); card.className = 'eq'; const h = document.createElement('h2'); h.textContent = eq.name; card.append(h);
+      const row = document.createElement('div'); row.className = 'row';
+      const add = (tex, id, opBefore) => { if (opBefore) { const o = document.createElement('span'); o.className = 'op'; o.textContent = opBefore; row.append(o); } const b = document.createElement('button'); b.className = 'term'; b.type = 'button'; b.dataset.id = id; b.setAttribute('aria-pressed', 'false'); b.innerHTML = tex; b.onclick = () => { if (st.phase !== 'predict') return; const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); snd.chop(on); }; row.append(b); };
+      eq.lhs.forEach((t, i) => add(t, pre + i, i ? '+' : ''));
+      const eqs = document.createElement('span'); eqs.className = 'op'; eqs.textContent = '='; row.append(eqs);
+      if (eq.zeroRhs) { const z = document.createElement('span'); z.className = 'op'; z.textContent = '0'; row.append(z); }
+      eq.rhs.forEach((t, i) => add(t, pre + (eq.lhs.length + i), i ? '+' : ''));
+      card.append(row); box.append(card);
+    });
+  }
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; const s = results[i]; e.dataset.s = s === null ? (i === R ? 'now' : '') : s === 10 ? 'right' : s > 0 ? 'half' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s || 0), 0); }
+  function showFinal(on) { for (const sel of ['#eqs', '#leg', '#brief', '#ansatz']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = { phase: 'predict' }; const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('ansatz').innerHTML = r.ansatz;
+    buildEqs(); $('go').hidden = false; $('go').disabled = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); typeset([$('brief'), $('ansatz'), $('eqs')]);
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict') return; st.phase = 'done'; const r = ROUNDS[R];
+    let miss = 0, bad = 0, hit = 0;
+    document.querySelectorAll('.term').forEach(b => { b.disabled = true; const z = r.zero.includes(b.dataset.id), on = b.getAttribute('aria-pressed') === 'true';
+      if (z && on) { b.classList.add('ok'); hit++; } else if (z && !on) { b.classList.add('miss'); b.setAttribute('aria-pressed', 'true'); miss++; } else if (!z && on) { b.classList.add('bad'); bad++; } });
+    const errs = miss + bad, pts = errs === 0 ? 10 : errs <= 2 ? 5 : 0; results[R] = pts; if (pts === 10) snd.ok(); else snd.no();
+    $('result').textContent = (pts === 10 ? 'All ' + r.zero.length + ' found, nothing wrongly killed. +10' : (miss ? miss + ' missed' : '') + (miss && bad ? ', ' : '') + (bad ? bad + ' wrongly killed' : '') + '. +' + pts);
+    $('result').className = 'result ' + (pts === 10 ? 'ok' : pts ? '' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([db]);
+  });
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🪓' : fr >= 0.7 ? '🪓' : fr >= 0.4 ? '✂️' : '🧮'; $('emo').className = 'emo' + (fr >= 0.7 ? ' chop' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
