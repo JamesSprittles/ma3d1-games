@@ -1,0 +1,249 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Air or Water</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Two tanks side by side above a moving plate; profiles grow live; stress gauges below. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B; --fluidA: #E8F0FA; --fluidB: #FBEFE2;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --fluidA: #1C2838; --fluidB: #2E2520; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --fluidA: #1C2838; --fluidB: #2E2520; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.data { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.data b { font-weight: 600; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.g h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+.bar { height: 16px; border-radius: 8px; background: color-mix(in srgb, var(--line) 50%, transparent); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--dye); width: 0; }
+.g .val { font-size: 15px; font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.slide { display: inline-block; animation: slide 2s ease-in-out infinite; }
+@keyframes slide { 0%, 100% { transform: translateX(-12px); } 50% { transform: translateX(12px); } }
+@media (prefers-reduced-motion: reduce) { .emo.slide { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+  <div class="data" id="data"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Two fluids above a plate that starts moving; the velocity profile grows into each"></canvas>
+  </div>
+  <div class="legend" id="cap"></div>
+  <div class="gauges" id="gauges">
+    <div class="g"><h2 id="gh1"></h2><div class="bar"><i id="bar1"></i></div><div class="val" id="val1"></div></div>
+    <div class="g"><h2 id="gh2"></h2><div class="bar"><i id="bar2"></i></div><div class="val" id="val2"></div></div>
+  </div>
+
+  <section class="card" id="card">
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Start the plate</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, Stokes' first problem · prototype</p>
+</div>
+
+<script>
+(function () {
+  // Stokes' first problem: u = U erfc(y / 2√(νt)); layer thickness taken as δ = 2√(νt) (u = 0.16 U); wall stress τ = μU/√(πνt).
+  const FLUIDS = { air: { name: 'air', rho: 1.2, mu: 1.8e-5 }, water: { name: 'water', rho: 1000, mu: 1.0e-3 }, glyc: { name: 'glycerine', rho: 1260, mu: 1.4 }, light: { name: 'fluid P', rho: 500, mu: 1.0e-3 }, dense: { name: 'fluid Q', rho: 2000, mu: 1.0e-3 } };
+  for (const f of Object.values(FLUIDS)) f.nu = f.mu / f.rho;
+  const ROUNDS = [
+    { title: 'Air or water?', brief: 'A flat plate is set moving at speed \\(U\\) at \\(t=0\\), once under deep still air and once under deep still water. One second later, in which fluid has the motion spread <b>further</b> from the plate?', A: 'air', B: 'water', ask: 'thick',
+      opts: [{ k: 'Water: it is the more viscous fluid', v: 'B' }, { k: 'Air, by about a factor of 4', v: 'A', ok: true }, { k: 'The same: the plate moves at the same speed', v: 'same' }],
+      debrief: ['Air. The spreading distance is \\(\\sim\\sqrt{\\nu t}\\), and \\(\\nu=\\mu/\\rho\\) is fifteen times larger for air than for water: air is far less viscous, but it is also eight hundred times lighter, and lightness wins.', 'What diffuses is momentum per unit mass. The ratio of thicknesses is \\(\\sqrt{15}\\approx3.9\\).'] },
+    { title: 'Water or glycerine?', brief: 'Same experiment, under water and under glycerine. After one second, which layer is thicker, and by roughly how much?', A: 'water', B: 'glyc', ask: 'thick',
+      opts: [{ k: 'Glycerine, by about 30 times', v: 'B', ok: true }, { k: 'Glycerine, by about 1000 times', v: 'B1000' }, { k: 'Water: it flows more easily', v: 'A' }],
+      debrief: ['Glycerine, by about \\(\\sqrt{1100}\\approx33\\). Its kinematic viscosity is about a thousand times that of water, and the thickness goes like the square root.', 'In one second the water has been stirred to a depth of about 2 mm; the glycerine to about 7 cm.'] },
+    { title: 'Which fluid drags harder?', brief: 'Back to air and water. The motion spreads further in air. Which fluid exerts the <b>larger shear stress</b> on the plate at \\(t=1\\) s?', A: 'air', B: 'water', ask: 'stress',
+      opts: [{ k: 'Air: the thicker layer means more fluid is being dragged', v: 'A' }, { k: 'Water, by about 200 times', v: 'B', ok: true }, { k: 'The same: same plate, same speed', v: 'same' }],
+      debrief: ['Water, by about 200 times. The stress is \\(\\mu\\,\\partial u/\\partial y|_{y=0}=\\mu U/\\sqrt{\\pi\\nu t}\\), which scales as \\(\\mu/\\sqrt{\\nu}=\\sqrt{\\mu\\rho}\\). Water has both the larger \\(\\mu\\) and the larger \\(\\rho\\).', 'Two different combinations: \\(\\nu\\) sets <em>how far</em> the motion spreads, \\(\\sqrt{\\mu\\rho}\\) sets <em>how hard</em> the fluid pulls. A thick layer with a gentle gradient can exert less force than a thin one with a steep gradient.'] },
+    { title: 'Same viscosity, different density', brief: 'Two fluids with the <b>same viscosity</b> \\(\\mu\\), but Q is four times denser than P. Which layer is thicker after one second, and which fluid pulls harder on the plate?', A: 'light', B: 'dense', ask: 'both',
+      opts: [{ k: 'Thicker in P; Q pulls harder', v: 'PQ', ok: true }, { k: 'Thicker in Q; Q pulls harder', v: 'QQ' }, { k: 'Thicker in P; P pulls harder', v: 'PP' }, { k: 'Same thickness, same stress: same viscosity', v: 'same' }],
+      debrief: ['Thicker in the light fluid P (\\(\\nu=\\mu/\\rho\\) is four times larger, so \\(\\delta\\) doubles); harder pull from the dense fluid Q (\\(\\tau\\propto\\sqrt{\\mu\\rho}\\), also a factor of two).', 'Density enters through inertia: the dense fluid resists being set moving, so the velocity gradient stays steep near the plate and the stress stays high.'] }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let R = 0, st, results = ROUNDS.map(() => null), runId = 0;
+  $('max').textContent = ROUNDS.length * 10;
+  function erfc(x) { const t = 1 / (1 + 0.5 * Math.abs(x)); const r = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277))))))))); return x >= 0 ? r : 2 - r; }
+
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      start() { tone(90, 0, 0.5, 'sawtooth', 0.08, 180); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+
+  function fresh() { return { phase: 'predict', choice: null, t: 0 }; }
+  let W = 300, H = 240;
+  function size() { W = stage.clientWidth; H = Math.round(Math.min(280, Math.max(210, W * 0.66))); const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); }
+  const PLATE = 18, U = 1;
+  const delta = (f, t) => 2 * Math.sqrt(f.nu * t), stress = (f, t) => f.mu * U / Math.sqrt(Math.PI * f.nu * t);
+  function draw() {
+    const r = ROUNDS[R], A = FLUIDS[r.A], B = FLUIDS[r.B], t = Math.max(st.t, 1e-6); ctx.clearRect(0, 0, W, H);
+    const dmax = Math.max(delta(A, 1), delta(B, 1)), scale = (H - PLATE - 24) * 0.92 / dmax; // px per metre, common to both panels
+    [[A, 0, '--fluidA'], [B, W / 2, '--fluidB']].forEach(([f, x0, fill]) => {
+      const x1 = x0 + W / 2, left = x0 + 10, span = (W / 2) * 0.72, yb = H - PLATE;
+      ctx.fillStyle = css(fill); ctx.fillRect(x0, 0, W / 2, yb);
+      // plate
+      ctx.fillStyle = css('--wall'); ctx.fillRect(x0, yb, W / 2, PLATE);
+      if (st.t > 0) { ctx.fillStyle = css('--surface'); const sh = (st.t * 60) % 24; for (let x = x0 - 24 + sh; x < x1; x += 24) { ctx.beginPath(); ctx.moveTo(x, yb + PLATE / 2); ctx.lineTo(x - 8, yb + 4); ctx.lineTo(x - 8, yb + PLATE - 4); ctx.closePath(); ctx.fill(); } }
+      // profile u(y) = U erfc(y / 2√(νt)), y upward from the plate, drawn to the common scale
+      ctx.strokeStyle = css('--flow'); ctx.lineWidth = 3; ctx.beginPath();
+      const ymax = (yb - 10) / scale;
+      for (let i = 0; i <= 80; i++) { const y = ymax * i / 80; const u = erfc(y / (2 * Math.sqrt(f.nu * t))); const X = left + span * u, Y = yb - y * scale; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
+      ctx.stroke();
+      // δ marker
+      const d = delta(f, t) * scale;
+      ctx.strokeStyle = css('--dye'); ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x0 + 4, yb - d); ctx.lineTo(x1 - 4, yb - d); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--ink'); ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText(f.name, x1 - 8, 16);
+    });
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+    const sA = stress(A, t), sB = stress(B, t), smax = Math.max(sA, sB), dA = delta(A, t), dB = delta(B, t);
+    const fmt = v => v >= 0.1 ? (100 * v).toFixed(0) + ' cm' : v >= 0.001 ? (1000 * v).toFixed(1) + ' mm' : (1e6 * v).toFixed(0) + ' µm';
+    $('gh1').textContent = A.name + ': stress on the plate'; $('gh2').textContent = B.name + ': stress on the plate';
+    $('bar1').style.width = (100 * sA / smax) + '%'; $('bar2').style.width = (100 * sB / smax) + '%';
+    const show = st.phase !== 'predict';
+    $('val1').textContent = show ? 'thickness ' + fmt(dA) + ' · stress ' + (sA / Math.max(sA, sB) * 100).toFixed(sA < sB ? 1 : 0) + '% of the larger' : '';
+    $('val2').textContent = show ? 'thickness ' + fmt(dB) + ' · stress ' + (sB / Math.max(sA, sB) * 100).toFixed(sB < sA ? 1 : 0) + '% of the larger' : '';
+    const tv = $('tv'); if (tv) tv.textContent = st.t.toFixed(2);
+  }
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0); }
+  function showFinal(on) { for (const sel of ['#stage', '#gauges', '#brief', '#cap', '#data']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  const sci = v => { const e = Math.floor(Math.log10(v)); const m = v / Math.pow(10, e); return (m.toFixed(1).replace(/\.0$/, '')) + '\\times10^{' + e + '}'; };
+  function load(i) {
+    runId++; R = i; st = fresh(); const r = ROUNDS[R], A = FLUIDS[r.A], B = FLUIDS[r.B];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('q').textContent = 'Your prediction';
+    $('data').innerHTML = [A, B].map(f => '<div><b>' + f.name + '</b><br>\\(\\rho=' + f.rho + '\\) kg m⁻³<br>\\(\\mu=' + sci(f.mu) + '\\) Pa s<br>\\(\\nu=' + sci(f.nu) + '\\) m² s⁻¹</div>').join('');
+    const box = $('choices'); box.innerHTML = '';
+    r.opts.forEach(o => { const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = o.v; b.setAttribute('aria-pressed', 'false'); b.textContent = o.k;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = o.v; $('go').disabled = false; }; box.append(b); });
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    $('cap').innerHTML = '<span>blue: velocity profile</span><span style="color:var(--dye)">dashed: layer thickness \\(2\\sqrt{\\nu t}\\)</span><span>\\(t=\\) <span id="tv">0.00</span> s</span>';
+    renderDots(); size(); typeset([$('brief'), $('data'), $('cap')]);
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    st.phase = 'run'; $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true); snd.start();
+    let last = performance.now(); const myRun = ++runId;
+    function frame(now) { if (myRun !== runId) return; const real = Math.min(0.05, (now - last) / 1000); last = now; st.t = reduceMotion ? 1 : Math.min(1, st.t + real / 3); draw(); if (st.t < 1) requestAnimationFrame(frame); else finish(); }
+    requestAnimationFrame(frame);
+  });
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R], truth = r.opts.find(o => o.ok).v, ok = st.choice === truth; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    $('result').textContent = ok ? 'Right. +10' : 'Not this time. +0'; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); draw(); typeset([db]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🛝' : fr >= 0.7 ? '🛝' : fr >= 0.4 ? '🌬️' : '🍯'; $('emo').className = 'emo' + (fr >= 0.7 ? ' slide' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
