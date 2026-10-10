@@ -26,7 +26,7 @@
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
-.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 8px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; box-sizing: border-box; }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dots { display: flex; gap: 6px; }
 .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
@@ -38,29 +38,29 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .score b { color: var(--ink); }
 .sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
 
-h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
-.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
 .stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 canvas { display: block; width: 100%; }
 .ulab { position: absolute; font-size: 15px; color: var(--ink); pointer-events: none; background: color-mix(in srgb, var(--surface) 70%, transparent); padding: 0 4px; border-radius: 3px; }
 .clock { position: absolute; right: 8px; top: 44px; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
-.ckey { display: flex; align-items: center; gap: 10px; justify-content: center; font-size: 14px; color: var(--muted); line-height: 1.2; }
+.ckey { display: flex; align-items: center; gap: 10px; justify-content: center; font-size: 13.5px; color: var(--muted); line-height: 1.2; }
 .ckey span { text-align: center; }
-.ckey i { flex: 0 1 180px; height: 14px; border-radius: 7px; border: 1px solid var(--line); background: linear-gradient(90deg, color-mix(in srgb, var(--conc) 8%, var(--surface)), var(--conc)); }
+.ckey i { flex: 0 1 120px; height: 12px; border-radius: 7px; border: 1px solid var(--line); background: linear-gradient(90deg, color-mix(in srgb, var(--conc) 8%, var(--surface)), var(--conc)); }
 .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .g h2 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .g h2 i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .gwrap { position: relative; }
 .ax { position: absolute; font-size: 13px; color: var(--muted); pointer-events: none; }
 .ay { left: 0; top: -2px; }
 .ax1 { right: 2px; bottom: -4px; }
-.g .val { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.g .val { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .q { margin: 0; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 6px; }
 .q i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.choice { font: 600 14.5px/1.15 var(--font-body); padding: 10px 4px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.choice { font: 600 14px/1.1 var(--font-body); padding: 6px 4px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .choice svg { width: 30px; height: 20px; }
 .choice.right { border-color: var(--good); }
@@ -69,10 +69,11 @@ canvas { display: block; width: 100%; }
 .row output { font-variant-numeric: tabular-nums; text-align: right; }
 input[type=range] { width: 100%; accent-color: var(--flow); height: 32px; margin: 0; }
 .actions { display: flex; gap: 8px; }
-button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 12px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
 button.primary:disabled { opacity: .4; cursor: default; }
 button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
-.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result { margin: 0; font-size: 16px; }
+.result:empty { display: none; }
 .result.ok { color: var(--good); font-weight: 600; }
 .result.no { color: var(--key); font-weight: 600; }
 .debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
@@ -85,7 +86,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
 @media (prefers-reduced-motion: reduce) { .emo.bob { animation: none; } }
 .verdict { margin: 0; font-weight: 600; }
 .final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
-.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+.foot { font-size: 12.5px; color: var(--muted); text-align: center; margin: 0; }
 </style>
 
 <div class="app">
@@ -100,24 +101,25 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     <canvas id="cv" role="img" aria-label="A river carrying dye past a fixed probe and a drifting boat"></canvas>
     <div class="clock">\(t=\) <span id="clock"></span></div>
     <div class="ulab" id="ulab">\(u_0=1\)</div>
+    <div class="ulab" id="vlab" hidden>\(v\)</div>
   </div>
 
-  <div class="ckey" aria-label="Colour key for the dye concentration"><span>clear water<br><b>low \(c\)</b></span><i></i><span>dark dye<br><b>high \(c\)</b></span></div>
+  <div class="ckey" aria-label="Colour key for the dye concentration"><span>clear water, <b>low \(c\)</b></span><i></i><span>dark dye, <b>high \(c\)</b></span></div>
 
   <div class="graphs" aria-label="Sensor read-outs">
-    <div class="g"><h2><i style="background:var(--bank)"></i><span id="nameA">Fixed probe</span></h2><div class="gwrap"><canvas id="gA" height="90"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vAn"></span></div></div>
-    <div class="g"><h2><i style="background:var(--boat)"></i><span id="nameB">Drifting boat</span></h2><div class="gwrap"><canvas id="gB" height="90"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vBn"></span></div></div>
+    <div class="g"><h2><i style="background:var(--bank)"></i><span id="nameA">Fixed probe</span></h2><div class="gwrap"><canvas id="gA" height="60"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vAn"></span></div></div>
+    <div class="g"><h2><i style="background:var(--boat)"></i><span id="nameB">Drifting boat</span></h2><div class="gwrap"><canvas id="gB" height="60"></canvas><span class="ax ay">\(c\)</span><span class="ax ax1">\(t\)</span></div><div class="val">\(c=\) <span id="vBn"></span></div></div>
   </div>
 
   <section class="card" id="card">
     <div id="predict">
-      <p class="q"><i style="background:var(--bank)"></i>What does the probe on the bank record?</p>
+      <p class="q"><i style="background:var(--bank)"></i>The probe on the bank records…</p>
       <div class="choices" id="chA" role="group" aria-label="Probe prediction"></div>
-      <p class="q" style="margin-top:10px"><i style="background:var(--boat)"></i>What does the drifting boat record?</p>
+      <p class="q" style="margin-top:6px"><i style="background:var(--boat)"></i>The drifting boat records…</p>
       <div class="choices" id="chB" role="group" aria-label="Boat prediction"></div>
     </div>
     <div id="motor" hidden>
-      <div class="row"><label for="v">Boat speed \(v\)</label><input type="range" id="v" min="-2" max="3" step="0.1" value="1" list="vticks"><datalist id="vticks"><option value="1" label="u₀"></option></datalist><output id="vo" for="v"></output></div>
+      <div class="row"><label for="v">Boat speed \(v\)</label><input type="range" id="v" min="-2" max="3" step="0.1" value="1"><output id="vo" for="v"></output></div>
       <p class="brief" id="motorNote"></p>
     </div>
     <div class="actions">
@@ -135,7 +137,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     <div class="actions"><button class="primary" id="again">Play again</button></div>
   </section>
 
-  <p class="foot">MA3D1 Fluid Dynamics · Chapter 2, the material derivative · prototype</p>
+  <p class="foot">MA3D1 · Chapter 2, the material derivative</p>
 </div>
 
 <script>
@@ -150,19 +152,19 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
   // c(x,t) in [0,1]-ish; the probe sits at x=3, the boat starts at x=1 and drifts at U0 (or v in the motor round)
   const ROUNDS = [
     {
-      title: 'Dye that fades downstream', brief: 'A steady picture: the dye is dark (high \\(c\\)) upstream and pale (low \\(c\\)) downstream, \\(c=c(x)\\) only, and it never changes. The river flows right at \\(u_0=1\\). Predict what each sensor records over the next 4 s.',
+      title: 'Dye that fades downstream', brief: 'Dark upstream, pale downstream, never changing: \\(c=c(x)\\). River flows right at \\(u_0=1\\).',
       c: (x, t) => 0.9 - 0.12 * x, ct: 0, cx: -0.12,
       debrief: ['\\(\\partial c/\\partial t=0\\): the probe reads a constant. \\(Dc/Dt=u_0\\,\\partial c/\\partial x=-0.12\\): the boat drifts into paler water and its reading falls.', 'A steady field is not a constant one for whoever moves through it. This is Fig. 2.5.']
     },
     {
-      title: 'Fading in time, steeper downstream', brief: 'The dye is \\(c=c_0+0.1x-0.15t\\): darker (more dye) downstream, and fading everywhere as time passes. The river still flows right at \\(u_0=1\\). Predict what each sensor records.',
+      title: 'Fading everywhere, darker downstream', brief: '\\(c=c_0+0.1x-0.15t\\): more dye downstream, and all of it fading with time. River still at \\(u_0=1\\).',
       c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1,
       debrief: ['Probe: \\(\\partial c/\\partial t=-0.15\\), falling. Boat: \\(Dc/Dt=-0.15+u_0\\times0.1=-0.05\\), also falling, but more slowly: it drifts towards darker water as the dye fades.', 'The two terms compete. Change the boat\'s speed and its reading can hold steady or even rise, which is the last round.']
     },
     {
-      title: 'Motorboat', brief: 'Same dye as before, \\(c=c_0+0.1x-0.15t\\). Now the boat has a motor and its speed \\(v\\) is yours to choose; the river itself no longer matters to what the boat records. <b>Choose \\(v\\) so that its reading stays constant.</b> One attempt.',
+      title: 'Motorboat on still water', brief: 'Same dye, but the water is <b>still</b>: \\(u_0=0\\). The boat has a motor. <b>Choose its speed \\(v\\) so that its reading stays constant.</b> One attempt.',
       c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1, motor: true, vstar: 1.5,
-      debrief: ['A boat moving at speed \\(v\\) records \\(\\partial c/\\partial t+v\\,\\partial c/\\partial x=-0.15+0.1v\\). Steady needs \\(v=1.5\\): faster than the river.', 'The material derivative is the special case \\(v=u_0\\): the rate recorded by an observer who moves with the fluid.']
+      debrief: ['A boat moving at speed \\(v\\) records \\(\\partial c/\\partial t+v\\,\\partial c/\\partial x=-0.15+0.1v\\). Steady needs \\(v=1.5\\). The water being still changes nothing: what the sensor sees depends on how the sensor moves through the field.', 'The material derivative is the special case \\(v=u_0\\): the observer who moves with the fluid. Here \\(u_0=0\\), so \\(Dc/Dt=\\partial c/\\partial t=-0.15\\) is what the bank probe reads.']
     }
   ];
   const PTS = [10, 10]; // per sensor; motor round scores 20
@@ -218,10 +220,10 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
 
   let W = 300, H = 150;
   function size() {
-    const w = $('stage').clientWidth; W = w; H = Math.round(Math.min(230, Math.max(170, w * 0.5)));
+    const w = $('stage').clientWidth; W = w; H = Math.round(Math.min(180, Math.max(160, w * 0.46)));
     const dpr = window.devicePixelRatio || 1;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const g of [gA, gB]) { const r = g.getBoundingClientRect(); g.width = Math.round(r.width * dpr); g.height = 90 * dpr; g.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0); }
+    for (const g of [gA, gB]) { const r = g.getBoundingClientRect(); g.width = Math.round(r.width * dpr); g.height = 60 * dpr; g.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0); }
     draw();
   }
   const sx = x => 14 + (x - XL) / (XR - XL) * (W - 28);
@@ -235,19 +237,19 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
   function boatAt(t) { const r = ROUNDS[R]; return 1 + (r.motor ? st.v : U0) * t; }
 
   function stickman(X, Y, col, seated) {
-    // X: centre, Y: ground (feet) level; about 30 px tall
-    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-    const headR = 4.5, hipY = seated ? Y - 10 : Y - 12, shoulderY = Y - 22;
-    ctx.beginPath(); ctx.arc(X, Y - 30, headR, 0, 2 * Math.PI); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(X, Y - 25); ctx.lineTo(X, hipY); ctx.stroke();
-    if (seated) { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X + 9, hipY); ctx.lineTo(X + 9, Y); ctx.stroke(); }
-    else { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X - 6, Y); ctx.moveTo(X, hipY); ctx.lineTo(X + 6, Y); ctx.stroke(); }
+    // X: centre, Y: ground (feet) level; about 36 px tall
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    const headR = 5.5, hipY = seated ? Y - 11 : Y - 14, shoulderY = Y - 26;
+    ctx.beginPath(); ctx.arc(X, Y - 35, headR, 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(X, Y - 29); ctx.lineTo(X, hipY); ctx.stroke();
+    if (seated) { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X + 10, hipY); ctx.lineTo(X + 10, Y); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(X, hipY); ctx.lineTo(X - 7, Y); ctx.moveTo(X, hipY); ctx.lineTo(X + 7, Y); ctx.stroke(); }
     return shoulderY;
   }
   function draw() {
     const r = ROUNDS[R], t = st.t, cConc = css('--conc'), cBank = css('--bank'), cBoat = css('--boat'), cInk = css('--ink'), cSurf = css('--surface');
     ctx.clearRect(0, 0, W, H);
-    const top = 40, bot = H - 14;
+    const top = 46, bot = H - 14;
     // dye: vertical strips of orange, opacity = c
     const n = 120; const sw = (W - 28) / n;
     for (let i = 0; i < n; i++) {
@@ -257,8 +259,8 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     ctx.globalAlpha = 1;
     hatch(0, top); hatch(bot, H);
     // flow arrows: ink with a pale halo so they read on dark and pale dye alike
-    const ya = top + (bot - top) * 0.47, L = 0.5 / (XR - XL) * (W - 28);
-    for (const x of [0.6, 2.0, 3.7, 5.4, 7.1]) {
+    const ya = top + (bot - top) * 0.27, L = 0.5 / (XR - XL) * (W - 28);
+    for (const x of (r.motor ? [] : [0.7, 1.9, 4.1, 5.5, 6.9])) {
       const X = sx(x);
       for (const [col, lw] of [[cSurf, 6], [cInk, 2.5]]) {
         ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -266,13 +268,14 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
         ctx.beginPath(); ctx.moveTo(X + L / 2, ya); ctx.lineTo(X + L / 2 - 9, ya - 6); ctx.lineTo(X + L / 2 - 9, ya + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke();
       }
     }
-    // probe: a person on the bank at x = 3 holding a pole into the water
+    // probe: a person standing on the bank at x = 3, drawn on a cleared patch of bank, holding a rod with the sensor in the water
     const Xp = sx(3);
-    const sh = stickman(Xp - 8, top, cBank, false);
-    ctx.strokeStyle = cBank; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xp - 8, sh); ctx.lineTo(Xp + 2, sh + 6); ctx.stroke(); // arm
-    ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xp + 2, sh); ctx.lineTo(Xp + 2, top + 30); ctx.stroke(); // pole
-    ctx.fillStyle = cBank; ctx.beginPath(); ctx.arc(Xp + 2, top + 33, 5, 0, 2 * Math.PI); ctx.fill(); // sensor
-    ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'left'; ctx.fillText('probe', Xp + 10, top - 14);
+    ctx.fillStyle = cSurf; ctx.beginPath(); ctx.roundRect(Xp - 26, 2, 84, top - 2, 6); ctx.fill();
+    const sh = stickman(Xp - 10, top, cBank, false);
+    ctx.strokeStyle = cBank; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xp - 10, sh); ctx.lineTo(Xp + 4, sh + 5); ctx.stroke(); // arm
+    ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xp + 4, sh + 1); ctx.lineTo(Xp + 4, top + 26); ctx.stroke(); // rod
+    ctx.fillStyle = cBank; ctx.beginPath(); ctx.roundRect(Xp - 1, top + 24, 10, 10, 2); ctx.fill(); // sensor
+    ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'left'; ctx.fillText('probe', Xp + 14, top - 16);
     // boat with a seated person and a sensor over the side
     const Xb = sx(Math.min(XR, boatAt(t))), yb = bot - 24;
     ctx.fillStyle = cBoat; ctx.strokeStyle = cInk; ctx.lineWidth = 1.5;
@@ -281,15 +284,22 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     ctx.strokeStyle = cInk; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xb - 6, shb); ctx.lineTo(Xb + 8, shb + 6); ctx.stroke(); // arm
     ctx.strokeStyle = cBoat; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xb + 14, shb + 4); ctx.lineTo(Xb + 26, yb + 12); ctx.stroke(); // sensor line over the side
     ctx.fillStyle = cBoat; ctx.beginPath(); ctx.arc(Xb + 27, yb + 14, 5, 0, 2 * Math.PI); ctx.fill();
-    ctx.fillStyle = cInk; ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText(r.motor ? 'motorboat' : 'boat', Xb - 4, yb + 20);
+    ctx.fillStyle = cInk; ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText(r.motor ? 'motorboat' : 'boat', Xb - 12, yb + 20);
+    // motorboat: its own velocity arrow, length proportional to v, drawn above the boat
+    const vl = $('vlab'); vl.hidden = !r.motor;
+    if (r.motor) { const Lv = st.v / (XR - XL) * (W - 28) * 0.5, ya2 = yb - 48, x0 = Xb, x1 = Xb + Lv;
+      if (Math.abs(Lv) > 4) for (const [col, lw] of [[cSurf, 6], [cBoat, 2.5]]) { const d = Math.sign(Lv); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(x0, ya2); ctx.lineTo(x1 - 4 * d, ya2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x1, ya2); ctx.lineTo(x1 - 9 * d, ya2 - 6); ctx.lineTo(x1 - 9 * d, ya2 + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke(); }
+      vl.style.left = (Math.min(x0, x1) + Math.abs(Lv) / 2 - 8) + 'px'; vl.style.top = (ya2 - 26) + 'px'; }
     $('clock').textContent = t.toFixed(1);
-    const ul = $('ulab'); ul.style.left = (sx(0.6) - L / 2) + 'px'; ul.style.top = (ya - 42) + 'px';
+    const ul = $('ulab'); ul.hidden = !!r.motor; ul.style.left = (sx(0.7) - L / 2) + 'px'; ul.style.top = (ya - 26) + 'px';
     graph(gA, st.recA, cBank); graph(gB, st.recB, cBoat);
     $('vAn').textContent = st.recA.length ? st.recA[st.recA.length - 1][1].toFixed(2) : r.c(3, 0).toFixed(2);
     $('vBn').textContent = st.recB.length ? st.recB[st.recB.length - 1][1].toFixed(2) : r.c(1, 0).toFixed(2);
   }
   function graph(g, rec, col) {
-    const c = g.getContext('2d'), w = g.getBoundingClientRect().width, h = 90; c.clearRect(0, 0, w, h);
+    const c = g.getContext('2d'), w = g.getBoundingClientRect().width, h = 60; c.clearRect(0, 0, w, h);
     const cLine = css('--line'), cMuted = css('--muted');
     c.strokeStyle = cLine; c.lineWidth = 1; c.beginPath(); c.moveTo(24, 4); c.lineTo(24, h - 14); c.lineTo(w - 4, h - 14); c.stroke();
     c.fillStyle = cMuted; c.font = '11px ' + css('--font-body'); c.textAlign = 'right';
@@ -320,7 +330,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
     $('predict').hidden = !!r.motor; $('motor').hidden = !r.motor;
     $('nameB').textContent = r.motor ? 'Motorboat' : 'Drifting boat';
-    if (r.motor) { $('v').value = 1; st.v = 1; $('vo').textContent = '1.0'; $('motorNote').innerHTML = 'The tick at \\(v=u_0=1\\) is the drifting boat of the earlier rounds. Its reading will be plotted on the right.'; $('go').disabled = false; }
+    if (r.motor) { $('v').value = 1; st.v = 1; $('vo').textContent = '1.0'; $('motorNote').innerHTML = 'Its reading is plotted on the right.'; $('go').disabled = false; }
     else { choices($('chA'), 'pA'); choices($('chB'), 'pB'); $('go').disabled = true; }
     $('go').hidden = false; $('next').hidden = true;
     $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
