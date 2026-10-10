@@ -162,7 +162,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
       debrief: ['Probe: \\(\\partial c/\\partial t=-0.15\\), falling. Boat: \\(Dc/Dt=-0.15+u_0\\times0.1=-0.05\\), also falling, but more slowly: it drifts towards darker water as the dye fades.', 'The two terms compete. Change the boat\'s speed and its reading can hold steady or even rise, which is the last round.']
     },
     {
-      title: 'Motorboat on still water', brief: 'Same dye, but the water is <b>still</b>: \\(u_0=0\\). The boat has a motor. <b>Choose its speed \\(v\\) so that its reading stays constant.</b> One attempt.',
+      title: 'Motorboat on still water', brief: 'Same dye, \\(c=c_0+0.1x-0.15t\\), but the water is <b>still</b>: \\(u_0=0\\). The boat has a motor. <b>Choose its speed \\(v\\) so that its reading stays constant.</b> One attempt.',
       c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1, motor: true, vstar: 1.5,
       debrief: ['A boat moving at speed \\(v\\) records \\(\\partial c/\\partial t+v\\,\\partial c/\\partial x=-0.15+0.1v\\). Steady needs \\(v=1.5\\). The water being still changes nothing: what the sensor sees depends on how the sensor moves through the field.', 'The material derivative is the special case \\(v=u_0\\): the observer who moves with the fluid. Here \\(u_0=0\\), so \\(Dc/Dt=\\partial c/\\partial t=-0.15\\) is what the bank probe reads.']
     }
