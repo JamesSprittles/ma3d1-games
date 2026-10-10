@@ -1,0 +1,271 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Pump Operator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Real-time control game: hold the flux through a pipe in the target band by driving the pump pressure, while the radius and viscosity change under you. Unsteady Hagen–Poiseuille solved live (implicit FD in r). */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B; --band: #0B7A55;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --band: #4CC79A; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --band: #4CC79A; color-scheme: dark; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: #E8A33D; border-color: #E8A33D; }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; }
+.stage { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font-size: 15px; color: var(--muted); white-space: nowrap; }
+.banner { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--key); color: #fff; font-weight: 700; font-size: 17px; padding: 8px 14px; border-radius: 999px; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.banner.ok { background: var(--good); }
+.ctl { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 4px; }
+.ctl .lbl { display: flex; justify-content: space-between; font-size: 15px; color: var(--muted); }
+.ctl .lbl b { color: var(--ink); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--flow); touch-action: none; }
+.strip { height: 84px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.mid { color: #B07A14; font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.debrief table { border-collapse: collapse; font-size: 15px; }
+.debrief td, .debrief th { padding: 3px 10px 3px 0; text-align: left; border-bottom: 1px solid var(--line); }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.beat { display: inline-block; animation: beat 0.9s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.15); } 45% { transform: scale(1); } 60% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .emo.beat { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Levels"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Pipe cross-section with the live velocity profile, and a flux gauge with the target band"></canvas>
+    <div class="banner" id="banner" hidden></div>
+  </div>
+  <div class="ctl" id="ctl">
+    <div class="lbl"><span>Pump: pressure gradient <span id="glab"></span></span><b id="gval">1.00</b></div>
+    <input type="range" id="G" min="0" max="4" step="0.01" value="1" aria-label="Pump pressure gradient, in units of the starting value">
+  </div>
+  <div class="stage strip" id="stripbox"><canvas id="strip" role="img" aria-label="Flux history over the shift"></canvas><div class="lab" id="striplab" style="left:50%;top:11px;font-size:13px">\(Q/Q_0\) over the shift (blue), pump setting (dotted)</div></div>
+
+  <section class="card" id="card">
+    <div class="actions">
+      <button class="primary" id="go">Start the shift</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, Hagen–Poiseuille flow · prototype</p>
+</div>
+
+<script>
+(function () {
+  // ---------- physics: unsteady pipe flow, w_t = G/rho + nu (1/r)(r w_r)_r, w(R) = 0, implicit Euler on N cells ----------
+  const N = 48;
+  function Pipe() {
+    const s = { R: 1, nu: 1, G: 1, w: new Float64Array(N + 1), t: 0 };
+    const a = new Float64Array(N + 1), b = new Float64Array(N + 1), c = new Float64Array(N + 1), d = new Float64Array(N + 1), cp = new Float64Array(N + 1), dp = new Float64Array(N + 1);
+    s.step = dt => {
+      const dr = s.R / N, k = s.nu * dt / (dr * dr), w = s.w;
+      b[0] = 1 + 4 * k; c[0] = -4 * k; a[0] = 0; d[0] = w[0] + dt * s.G;
+      for (let i = 1; i < N; i++) { const ri = i * dr; a[i] = -k * (1 - dr / (2 * ri)); b[i] = 1 + 2 * k; c[i] = -k * (1 + dr / (2 * ri)); d[i] = w[i] + dt * s.G; }
+      a[N] = 0; b[N] = 1; c[N] = 0; d[N] = 0;
+      cp[0] = c[0] / b[0]; dp[0] = d[0] / b[0];
+      for (let i = 1; i <= N; i++) { const m = b[i] - a[i] * cp[i - 1]; cp[i] = c[i] / m; dp[i] = (d[i] - a[i] * dp[i - 1]) / m; }
+      w[N] = dp[N]; for (let i = N - 1; i >= 0; i--) w[i] = dp[i] - cp[i] * w[i + 1];
+      s.t += dt;
+    };
+    s.flux = () => { const dr = s.R / N; let q = 0; for (let i = 0; i < N; i++) { const r0 = i * dr, r1 = (i + 1) * dr; q += 0.5 * (s.w[i] * r0 + s.w[i + 1] * r1) * dr; } return 2 * Math.PI * q; };
+    s.setR = Rn => { const old = Float64Array.from(s.w), Ro = s.R; for (let i = 0; i <= N; i++) { const r = Rn * i / N; if (r >= Ro) { s.w[i] = 0; continue; } const x = r / Ro * N, j = Math.min(N - 1, Math.floor(x)), f = x - j; s.w[i] = old[j] * (1 - f) + old[j + 1] * f; } s.w[N] = 0; s.R = Rn; };   // fluid stays where it is: a new wall inside stops it, new room beyond the old wall is at rest
+    s.setSteady = () => { for (let i = 0; i <= N; i++) { const r = s.R * i / N; s.w[i] = s.G / (4 * s.nu) * (s.R * s.R - r * r); } };
+    return s;
+  }
+  const Q0 = Math.PI / 8;                     // flux at R = 1, G = 1, mu = 1
+  const LEN = 32;                             // seconds per level
+  const LEVELS = [
+    { title: 'Level 1: the artery', lag: 0.25, band: [0.9, 1.1],
+      brief: 'You are the heart. Keep the blood flow through this artery inside the green band by driving the pressure. The vessel is small, so the flow answers the pump at once. Things will happen to the artery.',
+      events: [{ t: 7, R: 0.85, text: 'Plaque: radius down 15%' }, { t: 16, R: 0.75, text: 'Worse: radius down 25%' }, { t: 25, R: 1, text: 'Stent fitted: radius restored', ok: true }],
+      debrief(ev) { return ['Flux \\(Q=\\dfrac{\\pi R^4}{8\\mu}\\Big(-\\dfrac{\\mathrm{d}p}{\\mathrm{d}z}\\Big)\\): to hold \\(Q\\) fixed the pressure must go like \\(R^{-4}\\).', table(ev), 'A 15% narrowing needs <b>92%</b> more pressure; 25% needs more than three times. That fourth power is why a modest stenosis is a large change in blood pressure, and why a dilated vessel is such cheap relief.']; } },
+    { title: 'Level 2: the oil line', lag: 0.25, band: [0.9, 1.1],
+      brief: 'A short pipe carrying oil. Now the fluid changes as well as the pipe: cold oil is thicker. Same job: hold the flux.',
+      events: [{ t: 6, mu: 2, text: 'Cold snap: viscosity doubles' }, { t: 15, mu: 0.5, R: 1, text: 'Heated: viscosity halves', ok: true }, { t: 23, mu: 1.5, R: 0.9, text: 'Wax: viscosity ×1.5 and radius −10%' }],
+      debrief(ev) { return ['Viscosity enters \\(Q\\propto R^4/\\mu\\) to the first power only: double \\(\\mu\\), double the pressure. The radius is the sensitive one.', table(ev), 'The last event mixed the two: \\(1.5/0.9^4=2.29\\). Multiply the factors; the formula is a product.']; } },
+    { title: 'Level 3: the water main', lag: 14, band: [0.9, 1.1],
+      brief: 'A wide water main. Same events, same formula, but now the pipe is wide and the fluid thin, so the flow takes a while to catch up with the pump. If you chase the needle you will overshoot.',
+      events: [{ t: 6, R: 0.85, text: 'Partial blockage: radius down 15%' }, { t: 18, R: 1.1, text: 'Bypass opened: radius up 10%', ok: true }],
+      debrief(ev) { return ['The steady targets were the same as before: \\(0.85^{-4}=1.92\\) and \\(1.1^{-4}=0.68\\). What changed is the <b>time</b> the flow takes to get there: the pressure accelerates the whole core at once, but the wall can only slow it by diffusing momentum inwards, on the timescale \\(R^2/\\nu\\) (here ' + this.lag + ' s).', table(ev), 'So the needle lags the slider and overshoots when you chase it. A capillary (level 1) settles in microseconds; a 5 cm water main takes minutes. Same equation as the unsteady channel: \\(\\partial w/\\partial t=-\\frac1\\rho\\partial p/\\partial z+\\nu\\,\\nabla^2 w\\).']; } }
+  ];
+  function table(ev) { return '<table><tr><th>event</th><th>\\(R/R_0\\)</th><th>\\(\\mu/\\mu_0\\)</th><th>pressure needed</th></tr>' + ev.map(e => '<tr><td>' + e.text.split(':')[0] + '</td><td>' + e.R.toFixed(2) + '</td><td>' + e.mu.toFixed(2) + '</td><td>' + (e.mu / Math.pow(e.R, 4)).toFixed(2) + '\\(\\,G_0\\)</td></tr>').join('') + '</table>'; }
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), sc = $('strip'), sctx = sc.getContext('2d');
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let L = 0, st, results = LEVELS.map(() => null), runId = 0;
+  $('max').textContent = LEVELS.length * 10;
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; }, warm() { ctxA(); },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      mid() { tone(440, 0, 0.15, 'triangle', 0.15); tone(523, 0.15, 0.25, 'triangle', 0.15); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      alarm() { tone(880, 0, 0.12, 'square', 0.12); tone(660, 0.14, 0.12, 'square', 0.12); tone(880, 0.28, 0.12, 'square', 0.12); },
+      relief() { tone(660, 0, 0.12, 'triangle', 0.12); tone(880, 0.12, 0.2, 'triangle', 0.12); },
+      beat() { tone(60, 0, 0.09, 'sine', 0.25, 40); },
+      final(fr) {
+        if (fr >= 0.9) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.6) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.3) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+  // ---------- drawing ----------
+  let W = 300, H = 240, SW = 300, SH = 84;
+  function size() { W = stage.clientWidth; H = Math.round(Math.min(280, Math.max(210, W * 0.62))); const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    SW = $('stripbox').clientWidth; sc.width = SW * dpr; sc.height = SH * dpr; sc.style.height = SH + 'px'; sctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); placeLabels(); }
+  function hatch(x0, y0, x1, y1) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip(); ctx.strokeStyle = css('--wall'); ctx.lineWidth = 1.2; for (let x = x0 - 20; x < x1 + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); } ctx.restore(); }
+  function draw() {
+    if (!st) return; const p = st.pipe, lv = LEVELS[L]; ctx.clearRect(0, 0, W, H);
+    // pipe: left 60%, centreline horizontal, radius scaled to R (R = 1 -> 36% of H)
+    const px0 = 14, px1 = W * 0.6, cy = H / 2, Rpx = 0.36 * H * p.R;
+    hatch(px0, cy - Rpx - 14, px1, cy - Rpx); hatch(px0, cy + Rpx, px1, cy + Rpx + 14);
+    ctx.strokeStyle = css('--wall'); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px0, cy - Rpx); ctx.lineTo(px1, cy - Rpx); ctx.moveTo(px0, cy + Rpx); ctx.lineTo(px1, cy + Rpx); ctx.stroke();
+    ctx.strokeStyle = css('--line'); ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo((px0 + px1) / 2, cy); ctx.lineTo(px1, cy); ctx.stroke(); ctx.setLineDash([]);
+    // profile: w scaled so that the reference centre speed (R=1, G=1, mu=1 -> 0.25) spans 40% of the pipe length
+    const xb = px0 + 20, span = (px1 - px0) * 0.6 / 0.25;
+    ctx.strokeStyle = css('--flow'); ctx.lineWidth = 3; ctx.beginPath();
+    for (let i = N; i >= -N; i--) { const j = Math.abs(i), x = xb + span * p.w[j], y = cy + Rpx * i / N; i === N ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+    ctx.strokeStyle = css('--flow'); ctx.lineWidth = 1.5; for (let i = -N; i <= N; i += 8) { const j = Math.abs(i), y = cy + Rpx * i / N, x = xb + span * p.w[j]; if (x - xb > 6) { ctx.beginPath(); ctx.moveTo(xb, y); ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y - 3); ctx.lineTo(x - 6, y + 3); ctx.closePath(); ctx.fillStyle = css('--flow'); ctx.fill(); } }
+    // gauge: right 30%
+    const gx = W * 0.76, gw = 26, gt = 18, gb = H - 22, qmax = 2.0;
+    const yq = q => gb - (gb - gt) * Math.min(qmax, Math.max(0, q)) / qmax;
+    ctx.fillStyle = css('--line'); ctx.globalAlpha = .5; ctx.fillRect(gx - gw / 2, gt, gw, gb - gt); ctx.globalAlpha = 1;
+    ctx.fillStyle = css('--band'); ctx.globalAlpha = .35; ctx.fillRect(gx - gw / 2, yq(lv.band[1]), gw, yq(lv.band[0]) - yq(lv.band[1])); ctx.globalAlpha = 1;
+    const q = st.q, inb = q >= lv.band[0] && q <= lv.band[1];
+    ctx.fillStyle = inb ? css('--good') : css('--key'); ctx.fillRect(gx - gw / 2, yq(q), gw, gb - yq(q));
+    ctx.strokeStyle = css('--ink'); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx - gw / 2 - 8, yq(q)); ctx.lineTo(gx + gw / 2 + 8, yq(q)); ctx.stroke();
+    ctx.fillStyle = css('--ink'); ctx.font = '700 20px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText(q.toFixed(2), gx, H - 5);
+    ctx.fillStyle = css('--muted'); ctx.font = '13px ' + css('--font-body'); ctx.textAlign = 'left'; [0, 1, 2].forEach(v => ctx.fillText(v, gx + gw / 2 + 12, yq(v) + 4));
+    ctx.textAlign = 'left'; ctx.fillText(st.phase === 'run' ? 't = ' + Math.max(0, st.t).toFixed(0) + ' s' : (st.phase === 'done' ? 'done' : 'ready'), px0, 14);
+    // strip chart
+    sctx.clearRect(0, 0, SW, SH); const n = st.hist.length; const yh = v => SH - 6 - (SH - 12) * Math.min(qmax, Math.max(0, v)) / qmax;
+    sctx.fillStyle = css('--band'); sctx.globalAlpha = .25; sctx.fillRect(0, yh(lv.band[1]), SW, yh(lv.band[0]) - yh(lv.band[1])); sctx.globalAlpha = 1;
+    st.events.forEach(e => { if (e.fired) { const x = SW * e.t / LEN; sctx.strokeStyle = css('--key'); sctx.setLineDash([3, 3]); sctx.beginPath(); sctx.moveTo(x, 0); sctx.lineTo(x, SH); sctx.stroke(); sctx.setLineDash([]); } });
+    if (n > 1) { sctx.strokeStyle = css('--flow'); sctx.lineWidth = 2; sctx.beginPath(); st.hist.forEach((h, i) => { const x = SW * h[0] / LEN; i ? sctx.lineTo(x, yh(h[1])) : sctx.moveTo(x, yh(h[1])); }); sctx.stroke();
+      sctx.strokeStyle = css('--dye'); sctx.lineWidth = 1.5; sctx.setLineDash([2, 3]); sctx.beginPath(); st.hist.forEach((h, i) => { const x = SW * h[0] / LEN; i ? sctx.lineTo(x, yh(h[2])) : sctx.moveTo(x, yh(h[2])); }); sctx.stroke(); sctx.setLineDash([]); }
+  }
+  const labels = [];
+  function makeLabels() { stage.querySelectorAll('.lab').forEach(e => e.remove()); labels.length = 0; const add = (tex, k) => { const e = document.createElement('div'); e.className = 'lab'; e.dataset.k = k; e.innerHTML = tex; stage.append(e); labels.push(e); }; add('\\(w(r)\\)', 'w'); add('\\(Q/Q_0\\)', 'q'); typeset(labels); placeLabels(); }
+  function placeLabels() { labels.forEach(e => { if (e.dataset.k === 'w') { e.style.left = (W * 0.6 - 30) + 'px'; e.style.top = (H / 2 + 0.36 * H * 0.55) + 'px'; } else { e.style.left = (W * 0.76 - 8) + 'px'; e.style.top = '10px'; } }); }
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; LEVELS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === L ? 'now' : '') : results[i] >= 8 ? 'right' : results[i] >= 4 ? 'half' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s || 0), 0); }
+  function fresh() { const lv = LEVELS[L]; const pipe = Pipe(); pipe.setSteady(); return { phase: 'ready', pipe, t: -1, q: 1, hist: [], inb: 0, total: 0, events: lv.events.map(e => ({ ...e, fired: false })), R: 1, mu: 1 }; }
+  function load(i) {
+    runId++; L = i; st = fresh(); const lv = LEVELS[L];
+    $('final').hidden = true; $('card').hidden = false; $('stage').hidden = false; $('ctl').hidden = false; $('stripbox').hidden = false; $('brief').hidden = false; $('banner').hidden = true;
+    $('title').textContent = lv.title; $('brief').innerHTML = lv.brief; $('G').value = 1; $('G').disabled = false; $('gval').textContent = '1.00';
+    $('go').hidden = false; $('go').disabled = false; $('next').hidden = true; $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    $('glab').innerHTML = '\\(-\\mathrm{d}p/\\mathrm{d}z\\), in units of the start value'; renderDots(); size(); makeLabels(); typeset([$('brief'), $('glab'), $('striplab')]);
+  }
+  $('G').addEventListener('input', () => { const v = parseFloat($('G').value); st.pipe.G = v; $('gval').textContent = v.toFixed(2); });
+  let bannerTimer = null;
+  function banner(text, ok) { const b = $('banner'); b.textContent = text; b.className = 'banner' + (ok ? ' ok' : ''); b.hidden = false; clearTimeout(bannerTimer); bannerTimer = setTimeout(() => { b.hidden = true; }, 3200); if (ok) snd.relief(); else snd.alarm(); if (navigator.vibrate) navigator.vibrate(ok ? [60] : [120, 60, 120]); }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'ready') return; snd.warm(); st.phase = 'run'; $('go').disabled = true; const lv = LEVELS[L]; const myRun = ++runId;
+    let last = performance.now(), lastBeat = 0; st.t = 0;
+    function frame(now) {
+      if (myRun !== runId) return;
+      const real = Math.min(0.05, (now - last) / 1000); last = now; st.t += real;
+      st.events.forEach(e => { if (!e.fired && st.t >= e.t) { e.fired = true; if (e.R !== undefined) { st.pipe.setR(e.R); st.R = e.R; } if (e.mu !== undefined) { st.pipe.nu = e.mu; st.mu = e.mu; } banner(e.text, e.ok); } });
+      // advance the pipe: dimensionless time runs at 1/lag per real second; several substeps for accuracy
+      const dtau = real / lv.lag, sub = Math.max(1, Math.ceil(dtau / 0.02)); for (let k = 0; k < sub; k++) st.pipe.step(dtau / sub);
+      st.q = st.pipe.flux() / Q0; const inb = st.q >= lv.band[0] && st.q <= lv.band[1]; st.total += real; if (inb) st.inb += real;
+      if (st.hist.length === 0 || st.t - st.hist[st.hist.length - 1][0] > 0.1) st.hist.push([st.t, st.q, st.pipe.G]);
+      if (L === 0 && inb && st.t - lastBeat > 0.8) { lastBeat = st.t; snd.beat(); }
+      draw();
+      if (st.t < LEN) requestAnimationFrame(frame); else finish();
+    }
+    requestAnimationFrame(frame);
+  });
+  function finish() {
+    st.phase = 'done'; $('G').disabled = true; const lv = LEVELS[L]; const fr = st.inb / st.total, score = Math.round(10 * fr); results[L] = score;
+    if (score >= 8) snd.ok(); else if (score >= 4) snd.mid(); else snd.no();
+    $('result').innerHTML = (score >= 8 ? 'Steady hands. ' : score >= 4 ? 'Not bad. ' : 'Rough shift. ') + 'In the band ' + (100 * fr).toFixed(0) + '% of the time · +' + score;
+    $('result').className = 'result ' + (score >= 8 ? 'ok' : score >= 4 ? 'mid' : 'no');
+    // the table needs the cumulative (R, mu) after each event
+    let R = 1, mu = 1; const ev = lv.events.map(e => { if (e.R !== undefined) R = e.R; if (e.mu !== undefined) mu = e.mu; return { text: e.text, R, mu }; });
+    const db = $('debrief'); db.innerHTML = lv.debrief(ev).map(s => s.startsWith('<table') ? s : '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = L < LEVELS.length - 1 ? 'Next level' : 'See total';
+    renderDots(); draw(); typeset([db, $('result')]);
+  }
+  $('next').addEventListener('click', () => {
+    if (L < LEVELS.length - 1) load(L + 1);
+    else { const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (LEVELS.length * 10);
+      $('emo').textContent = fr >= 0.9 ? '🏆🫀' : fr >= 0.6 ? '🫀' : fr >= 0.3 ? '🩺' : '🚑'; $('emo').className = 'emo' + (fr >= 0.6 ? ' beat' : '');
+      $('card').hidden = true; $('stage').hidden = true; $('ctl').hidden = true; $('stripbox').hidden = true; $('brief').hidden = true; $('final').hidden = false; $('title').textContent = 'Shift over'; snd.final(fr); $('finalScore').textContent = tot; window.scrollTo(0, 0); }
+  });
+  $('again').addEventListener('click', () => { results = LEVELS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
