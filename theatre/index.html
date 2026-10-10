@@ -1,0 +1,291 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>You Are the Fluid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Whole-room game: every phone is one layer of fluid (its row). All phones run the same exact solution on the shared clock, so the lecture theatre displays u(y,t) as a pattern of screens and beeps. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744; --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.app.proj { max-width: 1100px; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--muted); }
+input[type=number] { font: 700 26px/1.2 var(--font-body); padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; box-sizing: border-box; }
+.choices { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.choice { font: 600 16px/1.25 var(--font-body); padding: 11px 12px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+/* the panel: this phone's layer */
+.panel { border-radius: 14px; min-height: 42vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; background: #440154; color: #fff; transition: background .25s linear; padding: 14px; }
+.panel.lit { color: #18202C; }
+.panel .u { font-family: var(--font-display); font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+.panel .sub { font-size: 17px; opacity: .9; }
+.panel .wait { font-family: var(--font-display); font-size: 46px; line-height: 1.1; }
+.flash { animation: flash .5s ease-out 1; }
+@keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(253,231,37,.9); } 100% { box-shadow: 0 0 0 28px rgba(253,231,37,0); } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .panel { transition: none; } }
+.stage { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.cap { font-size: 14px; color: var(--muted); text-align: center; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.wave { display: inline-block; animation: wave 1.4s ease-in-out infinite; }
+@keyframes wave { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) { .emo.wave { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+.foot a { color: inherit; }
+.proj .panel { display: none; }
+.proj canvas { height: 420px; }
+.projbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.projbar .wait { font-family: var(--font-display); font-size: 34px; }
+</style>
+
+<div class="app" id="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title">You Are the Fluid</h1>
+  <p class="brief" id="brief">The lecture theatre is a channel of fluid and every row of seats is one layer of it. The front wall is the lecturer's bench. Your phone <b>is</b> your row: it shows how fast your layer is moving, lights up and beeps when the motion reaches you. Everyone's phone runs the same exact solution on the same clock, so the whole room shows \(u(y,t)\).</p>
+
+  <section class="card" id="setup">
+    <p class="q">Where are you sitting?</p>
+    <div class="row2">
+      <label class="f">Your row (1 = front)<input type="number" id="row" min="1" step="1" inputmode="numeric" value="1"></label>
+      <label class="f">Rows in the theatre<input type="number" id="rows" min="4" max="60" step="1" inputmode="numeric" value="20"></label>
+    </div>
+    <div class="actions"><button class="primary" id="setGo">That's me</button></div>
+  </section>
+
+  <section class="card" id="card" hidden>
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Lock in</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <div class="panel" id="panel" hidden><div class="wait" id="pwait"></div><div class="u" id="pu" hidden><span id="pulab"></span> <span id="pun"></span></div><div class="sub" id="psub"></div></div>
+  <div class="projbar" id="projbar" hidden><button class="primary" data-r="0">Round 1: wall on</button><button class="primary" data-r="1">Round 2: pump on</button><span class="wait" id="pjwait"></span></div>
+  <div class="stage" id="stage" hidden><canvas id="cv" role="img" aria-label="Speed of every row in the theatre, live"></canvas></div>
+  <p class="cap" id="cap" hidden></p>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, unsteady 1D flow · prototype · <a id="projlink" href="?view=projector">projector view</a> · add <code>?start=now</code> to the address to try it alone</p>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const PROJ = params.get('view') === 'projector';
+  const D = 1;                       // row spacing, metres (only matters for the "viscosity of the theatre" line)
+  const RUN = 55;                    // seconds per run; runs start on the minute
+  const SLOT = 60000;
+  // ---------- physics ----------
+  function erfc(x) { const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s > 0 ? 1 - y : 1 + y; }
+  const XI_HALF = 0.476936;          // erfc(xi) = 1/2
+  const ROUNDS = [
+    {
+      title: 'Round 1: the wall starts moving', key: 'wall',
+      brief: 'At \\(t=0\\) the front of the theatre (the wall at \\(y=0\\)) starts sliding sideways at speed \\(U\\) and keeps going. The fluid is at rest and infinitely deep behind you. Your phone lights up the moment your row reaches \\(u=U/2\\).',
+      setup(N) { const r = { N, tN: 50 }; r.nu = (N * D) ** 2 / (4 * XI_HALF * XI_HALF * r.tN); r.tOf = n => (n * D) ** 2 / (4 * XI_HALF * XI_HALF * r.nu); r.u = (n, t) => t <= 0 ? 0 : erfc(n * D / (2 * Math.sqrt(r.nu * t))); r.nq = Math.max(1, Math.round(N / 4)); r.tq = r.tOf(r.nq); return r; },
+      q(r) { return 'Row ' + r.nq + ' will light up after about ' + r.tq.toFixed(1) + ' s. When will the back row, row ' + r.N + ', light up?'; },
+      opts(r) { const k = r.N / r.nq; return [
+        { k: 'About ' + (k * r.tq).toFixed(0) + ' s: ' + k.toFixed(0) + ' times as far, ' + k.toFixed(0) + ' times as long', v: 'lin' },
+        { k: 'About ' + (k * k * r.tq).toFixed(0) + ' s: ' + k.toFixed(0) + ' times as far, ' + (k * k).toFixed(0) + ' times as long', v: 'sq', ok: true },
+        { k: 'About ' + r.tq.toFixed(1) + ' s, the same as row ' + r.nq + ': the wall drags every layer at once', v: 'same' }]; },
+      debrief(r) { return ['Sixteen times as long for four times the distance. Momentum <em>diffuses</em>: \\(u=U\\,\\mathrm{erfc}\\big(y/2\\sqrt{\\nu t}\\big)\\), so the half-speed point sits at \\(y=0.95\\sqrt{\\nu t}\\) and reaches row \\(n\\) at \\(t_n\\propto n^2\\). You heard it: the beeps came quickly through the front rows and then slowed and slowed.',
+        'The wave never stops, it just gets slower: the back row of a theatre twice as deep would wait four times as long. Nothing propagates at a fixed speed here, which is what makes a diffusion equation different from a wave equation.',
+        'With rows ' + D + ' m apart this run used \\(\\nu\\approx' + r.nu.toFixed(1) + '\\) m\\(^2\\)s\\(^{-1}\\): the theatre was a fluid about ' + Math.round(r.nu / 1e-2) + ' times stickier than honey (\\(\\nu\\approx10^{-2}\\) m\\(^2\\)s\\(^{-1}\\)). In water, \\(\\nu=10^{-6}\\), the back row would wait ' + (r.tN * r.nu / 1e-6 / 3.15e7).toFixed(0) + ' years.']; }
+    },
+    {
+      title: 'Round 2: the pump switches on', key: 'pump',
+      brief: 'Now the front <b>and</b> the back of the theatre are fixed walls, and at \\(t=0\\) a pump imposes a constant pressure gradient along the room. Your phone shows your row\'s speed as a fraction of the final centre speed, and beeps when it first reaches 20% of it.',
+      setup(N) { const r = { N, H: (N + 1) * D, tau: 10 }; r.nu = r.H * r.H / (Math.PI * Math.PI * r.tau); r.umax = r.H * r.H / (8 * r.nu);   // G = 1, rho = 1
+        r.u = (n, t) => { if (t <= 0) return 0; const y = n * D, H = r.H; let s = y * (H - y) / (2 * r.nu); for (let k = 1; k <= 41; k += 2) s -= 4 * H * H / (r.nu * Math.PI ** 3 * k ** 3) * Math.sin(k * Math.PI * y / H) * Math.exp(-k * k * Math.PI * Math.PI * r.nu * t / (H * H)); return Math.max(0, s / r.umax); };
+        return r; },
+      q() { return 'A few seconds after switch-on, what pattern will the theatre show?'; },
+      opts() { return [
+        { k: 'A parabola already: brightest in the middle rows, fading smoothly towards both walls', v: 'para' },
+        { k: 'A plateau: nearly every row the same, except the two or three rows next to each wall', v: 'plug', ok: true },
+        { k: 'Brightest next to the walls, where the push is felt first', v: 'walls' }]; },
+      debrief(r) { return ['A plateau, with thin dark bands by the walls. The pressure gradient pushes every layer equally, \\(\\partial u/\\partial t=-\\frac1\\rho\\,\\partial p/\\partial x\\), so the core accelerates as one slab and the middle of the room beeped as a single chord. Only the fluid within \\(\\sqrt{\\nu t}\\) of a wall knows the wall is there.',
+        'The parabola appears only once the two wall layers have grown across and met, a time of order \\(H^2/\\nu\\) (here the slowest mode decays as \\(e^{-\\pi^2\\nu t/H^2}\\) with \\(H^2/\\pi^2\\nu=' + r.tau + '\\) s). The rows by the walls beeped last' + (4 * D * (r.H - D) / (r.H * r.H) < 0.2 ? ' or never' : '') + ': row 1 ends up at only ' + (100 * 4 * D * (r.H - D) / (r.H * r.H)).toFixed(0) + '% of the centre speed.',
+        'Same equation as round 1 plus a constant push: the plateau is the push, the dark edges are round 1 happening twice, once from each wall.']; }
+    }
+  ];
+  // ---------- state ----------
+  let R = 0, N = 20, ROW = 1, st = null, results = ROUNDS.map(() => null), runId = 0;
+  $('max').textContent = ROUNDS.length * 10;
+  if (params.get('rows')) { const v = parseInt(params.get('rows'), 10); if (v >= 4 && v <= 60) { N = v; $('rows').value = v; } }
+  $('projlink').href = '?view=projector' + (params.get('rows') ? '&rows=' + params.get('rows') : '');
+  // ---------- sound ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; }, warm() { ctxA(); },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      wake(f) { tone(f, 0, 0.6, 'triangle', 0.3); tone(f * 2, 0, 0.25, 'sine', 0.12); },
+      tick() { tone(1200, 0, 0.04, 'square', 0.05); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.5) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+  // ---------- colours (viridis, colour-blind safe) ----------
+  const VIR = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
+  function vir(v) { v = Math.max(0, Math.min(1, v)); const p = v * 4, i = Math.min(3, Math.floor(p)), f = p - i; const c = VIR[i].map((a, k) => Math.round(a + (VIR[i + 1][k] - a) * f)); return 'rgb(' + c.join(',') + ')'; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // ---------- shared clock ----------
+  function startFor(now) { if (params.get('start') === 'now') return now + 2000; const b0 = Math.floor(now / SLOT) * SLOT; return now - b0 < 15000 ? b0 : b0 + SLOT; }
+  // ---------- drawing: all rows ----------
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  let W = 300, Hc = 200;
+  function size() { if (stage.hidden) return; W = stage.clientWidth; Hc = PROJ ? 420 : Math.round(Math.min(230, Math.max(170, W * 0.55))); const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = Hc * dpr; cv.style.height = Hc + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); }
+  function draw() {
+    if (!st) return; const r = st.r, t = st.t; ctx.clearRect(0, 0, W, Hc);
+    const padL = 10, padR = 10, top = 28, bot = Hc - 26, g = (W - padL - padR) / N;
+    // walls
+    ctx.fillStyle = css('--wall'); ctx.globalAlpha = .25; ctx.fillRect(padL - 8, top - 6, 6, bot - top + 12); if (r.key === 'pump') ctx.fillRect(W - padR + 2, top - 6, 6, bot - top + 12); ctx.globalAlpha = 1;
+    for (let n = 1; n <= N; n++) {
+      const u = r.u(n, t), x = padL + (n - 1) * g, h = (bot - top) * u;
+      ctx.fillStyle = vir(u); ctx.fillRect(x + 1, bot - h, Math.max(1, g - 2), h);
+      ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.strokeRect(x + 1, top, Math.max(1, g - 2), bot - top);
+      if (!PROJ && n === ROW) { ctx.strokeStyle = css('--ink'); ctx.lineWidth = 3; ctx.strokeRect(x + 1, top - 3, Math.max(1, g - 2), bot - top + 6); }
+    }
+    ctx.fillStyle = css('--muted'); ctx.font = '13px ' + css('--font-body'); ctx.textAlign = 'left'; ctx.fillText('front wall', padL, top - 10); ctx.textAlign = 'right'; ctx.fillText(r.key === 'pump' ? 'back wall' : 'row ' + N, W - padR, top - 10);
+    ctx.textAlign = 'center'; ctx.fillText('rows 1 … ' + N + ' · t = ' + Math.max(0, t).toFixed(0) + ' s', W / 2, Hc - 8);
+  }
+  // ---------- rounds ----------
+  function renderDots() { const box = $('dots'); box.innerHTML = ''; ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); }); $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0); }
+  function load(i) {
+    runId++; R = i; const rd = ROUNDS[R]; st = { r: rd.setup(N), phase: 'predict', choice: null, t: 0, woke: false, start: null }; st.r.key = rd.key;
+    $('final').hidden = true; $('card').hidden = false; $('panel').hidden = true; $('stage').hidden = true; $('cap').hidden = true;
+    $('title').textContent = rd.title; $('brief').innerHTML = rd.brief; $('brief').hidden = false; $('q').textContent = rd.q(st.r);
+    const box = $('choices'); box.innerHTML = '';
+    rd.opts(st.r).forEach(o => { const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = o.v; b.setAttribute('aria-pressed', 'false'); b.textContent = o.k;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = o.v; $('go').disabled = false; }; box.append(b); });
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true; $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); typeset([$('brief')]);
+  }
+  $('setGo').addEventListener('click', () => {
+    const n = parseInt($('rows').value, 10), r = parseInt($('row').value, 10);
+    if (!(n >= 4 && n <= 60)) { $('rows').focus(); return; } if (!(r >= 1 && r <= n)) { $('row').focus(); return; }
+    N = n; ROW = r; $('setup').hidden = true; snd.warm(); load(0);
+  });
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    snd.warm(); const r = st.r; st.phase = 'wait'; st.start = startFor(Date.now()); $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    $('card').hidden = true; $('brief').hidden = true; $('panel').hidden = false; $('stage').hidden = false; $('cap').hidden = false; $('pu').hidden = true;
+    $('cap').textContent = 'Every row in the theatre, live. Yours is outlined.'; $('pulab').innerHTML = r.key === 'wall' ? '\\(u/U=\\)' : '\\(u/u_{\\max}=\\)'; typeset([$('pulab')]); size();
+    const myRun = ++runId; let lastTick = -1;
+    function frame() {
+      if (myRun !== runId) return;
+      const now = Date.now(); st.t = (now - st.start) / 1000;
+      if (st.t < 0) { const s = Math.ceil(-st.t); $('pwait').textContent = 'starts in ' + s + ' s'; $('psub').textContent = 'on the minute · row ' + ROW + ' of ' + N; if (s <= 3 && s !== lastTick) { lastTick = s; snd.tick(); } $('panel').style.background = '#440154'; $('panel').className = 'panel'; draw(); requestAnimationFrame(frame); return; }
+      $('pwait').textContent = ''; $('pu').hidden = false;
+      const u = r.u(ROW, st.t); $('pun').textContent = u.toFixed(2); $('psub').textContent = (r.key === 'wall' ? 'your layer\'s speed' : 'fraction of the final centre speed') + ' · row ' + ROW + ' · t = ' + st.t.toFixed(0) + ' s';
+      $('panel').style.background = vir(u); $('panel').className = 'panel' + (u > 0.55 ? ' lit' : '');
+      const thr = r.key === 'wall' ? 0.5 : 0.2;
+      if (!st.woke && u >= thr) { st.woke = true; $('panel').classList.add('flash'); snd.wake(880 * Math.pow(2, -ROW / N)); }
+      draw();
+      if (st.t < RUN) requestAnimationFrame(frame); else finish();
+    }
+    requestAnimationFrame(frame);
+  });
+  function finish() {
+    st.phase = 'done'; const rd = ROUNDS[R], r = st.r;
+    const truth = rd.opts(r).find(o => o.ok).v, ok = st.choice === truth; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    $('card').hidden = false; $('panel').hidden = true; window.scrollTo(0, 0);
+    document.querySelectorAll('.choice').forEach(c => { c.disabled = true; if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    let extra = r.key === 'wall' ? ' Row ' + ROW + ' lit at t = ' + r.tOf(ROW).toFixed(1) + ' s; the back row at ' + r.tOf(N).toFixed(0) + ' s.' : '';
+    $('result').innerHTML = (ok ? 'Right. +10' : 'Not this time. +0') + extra; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = rd.debrief(r).map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([db, $('result')]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🌊' : fr >= 0.5 ? '🌊' : '🫠'; $('emo').className = 'emo' + (fr >= 0.5 ? ' wave' : '');
+      $('card').hidden = true; $('stage').hidden = true; $('cap').hidden = true; $('final').hidden = false; $('title').textContent = 'Finished'; snd.final(fr); $('finalScore').textContent = tot; window.scrollTo(0, 0); }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  // ---------- projector view: the whole room, on the same clock ----------
+  if (PROJ) {
+    $('app').classList.add('proj'); $('setup').hidden = true; $('card').hidden = true; $('projbar').hidden = false; $('stage').hidden = false; $('cap').hidden = false; document.querySelector('.top').hidden = true;
+    $('title').textContent = 'You Are the Fluid: projector view'; $('brief').innerHTML = 'Pick the round the room is playing. The bars follow the same clock as the phones: runs start on the minute.';
+    $('cap').textContent = 'what every phone should be showing';
+    function run(i) { runId++; R = i; st = { r: ROUNDS[i].setup(N), t: 0, start: startFor(Date.now()) }; st.r.key = ROUNDS[i].key; size(); const myRun = runId;
+      (function frame() { if (myRun !== runId) return; st.t = (Date.now() - st.start) / 1000; $('pjwait').textContent = st.t < 0 ? 'starts in ' + Math.ceil(-st.t) + ' s' : st.t < RUN ? 't = ' + st.t.toFixed(0) + ' s' : 'done'; draw(); if (st.t < RUN) requestAnimationFrame(frame); })(); }
+    $('projbar').querySelectorAll('button').forEach(b => b.addEventListener('click', () => run(+b.dataset.r)));
+    run(0);
+  }
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
