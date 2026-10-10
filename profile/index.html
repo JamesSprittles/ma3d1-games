@@ -1,0 +1,308 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Which Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Round card, the channel with a dye line, A/B/C candidate profiles, release. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --ca: #7D3C98; --cb: #009E73; --cc: #E8A33D;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font: 700 15px/1 var(--font-body); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+.mlab { position: absolute; pointer-events: none; font-size: 15px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, transparent); padding: 0 4px; border-radius: 3px; }
+.status { position: absolute; right: 8px; top: 6px; font-size: 15px; color: var(--muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--dye); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choices.wide { grid-template-columns: 1fr; }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 12px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.choices.wide .choice { flex-direction: row; justify-content: flex-start; gap: 10px; text-align: left; padding: 10px 12px; }
+.choice .sw { width: 26px; height: 26px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.go { display: inline-block; animation: go 2.4s ease-in-out infinite; }
+@keyframes go { 0%, 100% { transform: translateX(-10px); } 50% { transform: translateX(10px); } }
+@media (prefers-reduced-motion: reduce) { .emo.go { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="A channel between two walls with a line of dye"></canvas>
+  </div>
+  <div class="legend" id="cond"></div>
+  <div class="legend" aria-hidden="true"><span><i></i>line of dye, released at \(t=0\)</span></div>
+
+  <section class="card" id="card">
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Release the dye</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, channel flows · prototype</p>
+</div>
+
+<script>
+(function () {
+  // Channel walls at y = ±1 (H = 2), top wall speed U, G = −dp/dx, μ = 1:  u(y) = U (y+1)/2 + (G/2)(1 − y²)
+  const prof = (U, G) => y => U * (y + 1) / 2 + (G / 2) * (1 - y * y);
+  const ROUNDS = [
+    {
+      title: 'Pushed by pressure', brief: 'Both walls fixed. A pressure gradient \\(\\mathrm{d}p/\\mathrm{d}x<0\\) pushes the fluid to the right. A vertical line of dye is released. What shape will it take?',
+      q: 'Which curve will the dye line follow?', U: 0, G: 2, T: 1.2,
+      cands: [{ k: 'A', f: y => 1 - y * y, ok: true }, { k: 'B', f: y => 1 }, { k: 'C', f: y => Math.pow(1 - y * y, 0.3) }],
+      debrief: ['A parabola: \\(u=\\dfrac{1}{2\\mu}\\dfrac{\\mathrm{d}p}{\\mathrm{d}x}\\left(y^2-\\dfrac{H^2}{4}\\right)\\), zero at both walls, fastest in the middle. Plane Poiseuille flow, (3.9) in the notes.', 'B would need the fluid to slip at the walls. C is blunter than a parabola: that is what a turbulent pipe profile looks like, not a laminar one.']
+    },
+    {
+      title: 'Dragged by a wall', brief: 'No pressure gradient now. The top wall moves right at speed \\(U\\); the bottom wall is fixed. What shape will the dye line take?',
+      q: 'Which curve will the dye line follow?', U: 2, G: 0, T: 1.2,
+      cands: [{ k: 'A', f: y => 1 - y * y }, { k: 'B', f: y => (y + 1) / 2, ok: true }, { k: 'C', f: y => ((y + 1) / 2) ** 3 }],
+      debrief: ['A straight line: with no pressure gradient, \\(\\mu\\,\\partial^2u/\\partial y^2=0\\), so \\(u\\) is linear between the two no-slip values. Plane Couette flow.', 'Every layer is sheared equally: the shear stress \\(\\mu\\,\\partial u/\\partial y=\\mu U/H\\) is the same all the way across.']
+    },
+    {
+      title: 'Both together', brief: 'The top wall moves right at \\(U\\) <em>and</em> a pressure gradient pushes right. What shape now?',
+      q: 'Which curve will the dye line follow?', U: 1.6, G: 1.6, T: 1.0,
+      cands: [{ k: 'A', f: y => 1.6 * (y + 1) / 2 }, { k: 'B', f: y => 0.8 * (1 - y * y) + 0.8 }, { k: 'C', f: prof(1.6, 1.6), ok: true }],
+      debrief: ['The equation is linear, so the two solutions add: \\(u=U\\dfrac{y+H/2}{H}+\\dfrac{1}{2\\mu}\\dfrac{\\mathrm{d}p}{\\mathrm{d}x}\\left(y^2-\\dfrac{H^2}{4}\\right)\\). A parabola leaning on a straight line, fastest above the centre.', 'A forgets the pressure, B forgets that the bottom wall is fixed.']
+    },
+    {
+      title: 'Wall one way, pressure the other', brief: 'The top wall still moves right at \\(U\\), but now the pressure gradient pushes <em>left</em>, hard: \\(\\mathrm{d}p/\\mathrm{d}x>0\\). What shape now?',
+      q: 'Which curve will the dye line follow?', U: 1.2, G: -2.4, T: 1.0,
+      cands: [{ k: 'A', f: y => 1.2 * ((y + 1) / 2) ** 2 }, { k: 'B', f: prof(1.2, -2.4), ok: true }, { k: 'C', f: y => 1.2 * (y + 1) / 2 }],
+      debrief: ['Backflow. Near the fixed wall the pressure gradient wins and the fluid moves <em>left</em>, against the wall that is dragging the top layer right. The profile crosses zero inside the channel.', 'An adverse pressure gradient fighting a wall is the seed of boundary-layer separation in Chapter 7. A and C never go negative: they assume the fluid must follow the wall.']
+    },
+    {
+      title: 'Read it backwards', brief: 'This time you see the dye line first. Watch it, then say what made it.',
+      q: 'What produced this profile?', U: -1.0, G: 2.0, T: 1.0, reveal: true,
+      opts: [{ k: 'Top wall moving right, no pressure gradient', v: 'wall' }, { k: 'Pressure gradient pushing right, both walls fixed', v: 'press' }, { k: 'Pressure pushing right, top wall moving left', v: 'both', ok: true }],
+      debrief: ['The fluid is fastest below the centre and the top layer moves <em>left</em>: a rightward parabola plus a leftward straight line. The top wall is moving against the flow it sits on.', 'Reading profiles is the skill: slope at a wall gives the wall stress, curvature gives the pressure gradient, the wall value gives the wall speed.']
+    }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CCOL = { A: '--ca', B: '--cb', C: '--cc' };
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+
+  // ---------- sound ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    function noise(t0, dur, gain, f0, f1) {
+      const a = ctxA(); if (!a || !on) return; const n = a.sampleRate * dur, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const s = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; flt.type = 'bandpass'; flt.Q.value = 1.2;
+      flt.frequency.setValueAtTime(f0, a.currentTime + t0); flt.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain, a.currentTime + t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      s.connect(flt).connect(g).connect(a.destination); s.start(a.currentTime + t0);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      pour() { noise(0, 1.2, 0.2, 200, 900); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function fresh() { return { phase: 'predict', choice: null, t: 0 }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).then(placeLabels).catch(() => {}); }
+
+  let W = 300, H = 220;
+  function size() {
+    W = stage.clientWidth; H = Math.round(Math.min(260, Math.max(200, W * 0.6)));
+    const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(); placeLabels();
+  }
+  const WALL = 18; let X0 = 0.22, K = 0.5; // dye released at fraction X0 of the width; velocity 1 moves it K of the width per unit time
+  function fitScale() {
+    const r = ROUNDS[R], fs = (r.cands ? r.cands.map(c => c.f) : []).concat([prof(r.U, r.G)]);
+    let lo = 0, hi = 0; fs.forEach(f => { for (let i = 0; i <= 40; i++) { const v = f(-1 + 2 * i / 40) * r.T; lo = Math.min(lo, v); hi = Math.max(hi, v); } });
+    K = 0.86 / Math.max(hi - lo, 1e-6); X0 = 0.07 - K * lo;
+  }
+  const sy = y => WALL + (1 - y) / 2 * (H - 2 * WALL);
+  const sx = (x) => x * W;
+  function hatch(y0, y1, up) {
+    ctx.strokeStyle = css('--wall'); ctx.lineWidth = 1.2; ctx.save(); ctx.beginPath(); ctx.rect(0, y0, W, y1 - y0); ctx.clip();
+    for (let x = -20; x < W + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); }
+    ctx.restore(); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, up ? y1 : y0); ctx.lineTo(W, up ? y1 : y0); ctx.stroke();
+  }
+  function curvePts(f, t) { const pts = []; for (let i = 0; i <= 60; i++) { const y = -1 + 2 * i / 60; pts.push([X0 + K * f(y) * t, y]); } return pts; }
+  function polyline(pts) { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(sx(q[0]), sy(q[1])) : ctx.moveTo(sx(q[0]), sy(q[1]))); ctx.stroke(); }
+
+  function draw() {
+    const r = ROUNDS[R], t = st.t, u = prof(r.U, r.G);
+    ctx.clearRect(0, 0, W, H);
+    // walls, with chevrons showing a moving wall
+    hatch(0, WALL, true); hatch(H - WALL, H, false);
+    if (r.U !== 0 && !(r.reveal && st.phase !== 'done')) {
+      ctx.fillStyle = css('--ink'); ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'center';
+      const dir = r.U > 0 ? 1 : -1, shift = ((t * K * r.U * W) % 28 + 28) % 28;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, WALL); ctx.clip(); ctx.fillStyle = css('--surface'); ctx.fillRect(0, 2, W, WALL - 4);
+      ctx.fillStyle = css('--ink');
+      for (let x = -28; x < W + 28; x += 28) { const X = x + (r.U > 0 ? shift : -shift); ctx.beginPath(); ctx.moveTo(X, WALL / 2); ctx.lineTo(X - dir * 8, WALL / 2 - 5); ctx.lineTo(X - dir * 8, WALL / 2 + 5); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+    // candidate curves at full time (faint), only in predict phase or for the chosen/correct afterwards
+    if (r.cands && (st.phase === 'predict' || st.phase === 'run')) {
+      r.cands.forEach(c => { const col = css(CCOL[c.k]); ctx.strokeStyle = col; ctx.lineWidth = st.choice === c.k ? 4 : 2.5; ctx.globalAlpha = st.phase === 'predict' ? 0.9 : 0.3; ctx.setLineDash([6, 5]); polyline(curvePts(c.f, r.T)); ctx.setLineDash([]); ctx.globalAlpha = 1; });
+    }
+    // the dye line: a column of particles at x0 advected by u(y)
+    ctx.strokeStyle = css('--dye'); ctx.lineWidth = 3.5; polyline(curvePts(u, t));
+    ctx.fillStyle = css('--dye'); for (let i = 0; i <= 12; i++) { const y = -1 + 2 * i / 12; ctx.beginPath(); ctx.arc(sx(X0 + K * u(y) * t), sy(y), 3, 0, 2 * Math.PI); ctx.fill(); }
+    // release line
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(sx(X0), WALL); ctx.lineTo(sx(X0), H - WALL); ctx.stroke(); ctx.setLineDash([]);
+  }
+  const labels = [];
+  function makeLabels() {
+    labels.length = 0; stage.querySelectorAll('.lab, .mlab').forEach(e => e.remove());
+    const r = ROUNDS[R];
+    (r.cands || []).forEach(c => { const e = document.createElement('div'); e.className = 'lab'; e.textContent = c.k; e.style.background = css(CCOL[c.k]); stage.append(e); labels.push([c, e]); });
+    $('cond').innerHTML = (r.U !== 0 ? '<span>top wall: \\(U\\) ' + (r.U > 0 ? '→' : '←') + '</span>' : '<span>both walls fixed</span>') + (r.G !== 0 ? '<span>pressure: \\(\\mathrm{d}p/\\mathrm{d}x' + (r.G > 0 ? '<0\\) (pushes →)' : '>0\\) (pushes ←)') + '</span>' : '<span>no pressure gradient</span>');
+  }
+  function placeLabels() {
+    const r = ROUNDS[R];
+    labels.forEach(([c, e], i) => { const yl = [0.55, 0, -0.55][i]; e.style.left = (sx(X0 + K * c.f(yl) * r.T) + 16) + 'px'; e.style.top = sy(yl) + 'px'; });
+  }
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '.legend', '#brief', '#cond']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('q').textContent = r.q;
+    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (r.opts ? ' wide' : '');
+    const items = r.cands ? r.cands.map(c => ({ k: 'Curve ' + c.k, v: c.k, sw: c.k })) : r.opts.map(o => ({ k: o.k, v: o.v }));
+    items.forEach(it => {
+      const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = it.v; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = (it.sw ? '<span class="sw" style="background:' + css(CCOL[it.sw]) + '">' + it.sw + '</span>' : '') + it.k;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = it.v; $('go').disabled = false; draw(); };
+      box.append(b);
+    });
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    makeLabels(); fitScale(); renderDots(); size(); $('cond').hidden = !!r.reveal; typeset([$('brief'), $('cond')]);
+    if (r.reveal) { $('go').disabled = true; $('go').textContent = 'Watching…'; box.hidden = true; $('q').hidden = true; run(() => { box.hidden = false; $('q').hidden = false; st.phase = 'predict'; $('go').textContent = 'Lock in'; $('go').disabled = st.choice === null; }); }
+    else $('go').textContent = 'Release the dye';
+  }
+  function run(done) {
+    const r = ROUNDS[R]; st.phase = 'run'; st.t = 0; snd.pour(); let last = performance.now();
+    function step(now) { const real = Math.min(0.05, (now - last) / 1000); last = now; st.t = reduceMotion ? r.T : Math.min(r.T, st.t + real * 0.5); draw(); if (st.t < r.T) requestAnimationFrame(step); else done(); }
+    requestAnimationFrame(step);
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    if (ROUNDS[R].reveal) finish(); else run(finish);
+  });
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R];
+    const truth = r.cands ? r.cands.find(c => c.ok).k : r.opts.find(o => o.ok).v, ok = st.choice === truth; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { c.disabled = true; if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    $('result').textContent = ok ? 'Right. +10' : 'Not this time. +0'; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    $('cond').hidden = false; renderDots(); draw(); typeset([db]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🌊' : fr >= 0.7 ? '🚿' : fr >= 0.4 ? '🫧' : '🚰'; $('emo').className = 'emo' + (fr >= 0.7 ? ' go' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
