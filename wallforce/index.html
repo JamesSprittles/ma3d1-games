@@ -1,0 +1,314 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Push on the Wall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Round card, the channel with a dye line, A/B/C candidate profiles, release. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --ca: #7D3C98; --cb: #009E73; --cc: #E8A33D;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font: 700 15px/1 var(--font-body); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+.mlab { position: absolute; pointer-events: none; font-size: 15px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, transparent); padding: 0 4px; border-radius: 3px; }
+.status { position: absolute; right: 8px; top: 6px; font-size: 15px; color: var(--muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--dye); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choices.wide { grid-template-columns: 1fr; }
+.choices.groups { grid-template-columns: 1fr; gap: 6px; }
+.glabel { font-size: 15px; color: var(--muted); margin-top: 4px; }
+.grow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 12px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.choices.wide .choice { flex-direction: row; justify-content: flex-start; gap: 10px; text-align: left; padding: 10px 12px; }
+.choice .sw { width: 26px; height: 26px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.go { display: inline-block; animation: go 2.4s ease-in-out infinite; }
+@keyframes go { 0%, 100% { transform: translateX(-10px); } 50% { transform: translateX(10px); } }
+@media (prefers-reduced-motion: reduce) { .emo.go { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="A channel between two walls with a line of dye"></canvas>
+  </div>
+  <div class="legend" id="cond"></div>
+  <div class="legend" aria-hidden="true"><span><i></i>line of dye, released at \(t=0\)</span></div>
+
+  <section class="card" id="card">
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Release the dye</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, wall stress · prototype</p>
+</div>
+
+<script>
+(function () {
+  // Channel walls at y = ±1 (H = 2), top wall speed U, G = −dp/dx, μ = 1:  u(y) = U (y+1)/2 + (G/2)(1 − y²)
+  const prof = (U, G) => y => U * (y + 1) / 2 + (G / 2) * (1 - y * y);
+  // wall traction (x-component, per unit area, μ = 1, H = 2): top wall: −∂u/∂y at y=+1 ; bottom wall: +∂u/∂y at y=−1
+  const dudy = (U, G) => y => U / 2 - G * y;
+  const ROUNDS = [
+    { title: 'Dragged by a wall', brief: 'The top wall moves right at \\(U\\); the bottom wall is fixed; no pressure gradient. The dye line will show the flow. <b>Which way does the fluid push each wall?</b>', U: 2, G: 0, T: 1.2,
+      debrief: ['Top wall: pushed <em>left</em>, against its own motion: that is the drag you pay to keep it moving. Bottom wall: pushed <em>right</em>, dragged along by the fluid above it.', 'Both come from the same shear stress \\(\\mu\\,\\partial u/\\partial y=\\mu U/H>0\\). The traction on a wall is \\(\\underline{\\underline{\\sigma}}\\cdot\\underline{n}\\) with \\(\\underline{n}\\) pointing <em>into the fluid</em>, and \\(\\underline{n}\\) flips sign between the two walls.'] },
+    { title: 'Pushed by pressure', brief: 'Both walls fixed; a pressure gradient drives the fluid to the right. Which way does the fluid push each wall?', U: 0, G: 2, T: 1.2,
+      debrief: ['Both walls are pushed <em>right</em>, with equal force. The pressure pushes the fluid, the fluid drags the walls.', 'Here \\(\\partial u/\\partial y\\) changes sign across the channel, and so does \\(\\underline{n}\\): the two sign changes cancel and both walls feel the same thing. Together they carry exactly the pressure force on the fluid: \\(2\\tau_w=H\\,(-\\mathrm{d}p/\\mathrm{d}x)\\).'] },
+    { title: 'Both together', brief: 'Top wall moving right at \\(U\\) <em>and</em> a pressure gradient pushing right. Which way is each wall pushed, and which feels more?', U: 1.6, G: 1.6, T: 1.0, ask3: true,
+      debrief: ['Both right, the bottom wall harder. At the top the wall-drag (left) and the pressure-driven shear (right) fight and the pressure wins here; at the bottom they add.', 'Top: \\(\\tau=-\\mu U/H+\\tfrac12H(-p^\\prime)\\). Bottom: \\(\\tau=+\\mu U/H+\\tfrac12H(-p^\\prime)\\). Turn \\(U\\) up and the top wall\'s force reverses: there is a wall speed at which the top wall feels nothing at all.'] },
+    { title: 'Wall one way, pressure the other', brief: 'Top wall moving right at \\(U\\), pressure gradient pushing <em>left</em>, hard. Which way is each wall pushed?', U: 1.2, G: -2.4, T: 1.0,
+      debrief: ['Both <em>left</em>. The top wall is dragged back against its motion, as always. The bottom wall sits under backflow, so it is pushed left too, even though the only moving thing in the picture moves right.', 'Sign errors here are the classic mistake: the direction of the force on a wall comes from the velocity gradient at <em>that</em> wall and the normal into the fluid there, not from which way "the flow" goes.'] },
+    { title: 'Laminar or turbulent', brief: 'Two long pipes, same radius, same pressure drop between the ends. In one the flow is laminar; in the other it has gone turbulent (Chapter 4). Which pipe\'s wall feels the larger shear stress?', text: true,
+      opts: [{ k: 'The turbulent one: steeper gradients at the wall', v: 'turb' }, { k: 'The laminar one: the parabola is the smooth, high-stress case', v: 'lam' }, { k: 'Exactly the same', v: 'same', ok: true }],
+      debrief: ['The same. Take the fluid in a length \\(L\\) of pipe as the body: the pressure force \\(\\pi R^2\\,\\Delta p\\) on its ends is balanced by the wall stress over \\(2\\pi RL\\), so \\(\\tau_w=\\tfrac{R}{2}\\,\\dfrac{\\Delta p}{L}\\) whatever the profile looks like.', 'What changes is the flow rate: the turbulent pipe carries far less fluid for the same \\(\\Delta p\\). The force balance is exact; Hagen–Poiseuille is the laminar special case of it.'] }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CCOL = { A: '--ca', B: '--cb', C: '--cc' };
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+
+  // ---------- sound ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    function noise(t0, dur, gain, f0, f1) {
+      const a = ctxA(); if (!a || !on) return; const n = a.sampleRate * dur, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const s = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; flt.type = 'bandpass'; flt.Q.value = 1.2;
+      flt.frequency.setValueAtTime(f0, a.currentTime + t0); flt.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain, a.currentTime + t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      s.connect(flt).connect(g).connect(a.destination); s.start(a.currentTime + t0);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      pour() { noise(0, 1.2, 0.2, 200, 900); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function fresh() { return { phase: 'predict', choice: null, t: 0 }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).then(placeLabels).catch(() => {}); }
+
+  let W = 300, H = 220;
+  function size() {
+    W = stage.clientWidth; H = Math.round(Math.min(260, Math.max(200, W * 0.6)));
+    const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(); placeLabels();
+  }
+  const WALL = 18; let X0 = 0.22, K = 0.5; // dye released at fraction X0 of the width; velocity 1 moves it K of the width per unit time
+  function fitScale() {
+    const r = ROUNDS[R], fs = [prof(r.U || 0, r.G || 0)]; if (r.text) return;
+    let lo = 0, hi = 0; fs.forEach(f => { for (let i = 0; i <= 40; i++) { const v = f(-1 + 2 * i / 40) * r.T; lo = Math.min(lo, v); hi = Math.max(hi, v); } });
+    K = 0.86 / Math.max(hi - lo, 1e-6); X0 = 0.07 - K * lo;
+  }
+  const sy = y => WALL + (1 - y) / 2 * (H - 2 * WALL);
+  const sx = (x) => x * W;
+  function hatch(y0, y1, up) {
+    ctx.strokeStyle = css('--wall'); ctx.lineWidth = 1.2; ctx.save(); ctx.beginPath(); ctx.rect(0, y0, W, y1 - y0); ctx.clip();
+    for (let x = -20; x < W + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); }
+    ctx.restore(); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, up ? y1 : y0); ctx.lineTo(W, up ? y1 : y0); ctx.stroke();
+  }
+  function curvePts(f, t) { const pts = []; for (let i = 0; i <= 60; i++) { const y = -1 + 2 * i / 60; pts.push([X0 + K * f(y) * t, y]); } return pts; }
+  function polyline(pts) { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(sx(q[0]), sy(q[1])) : ctx.moveTo(sx(q[0]), sy(q[1]))); ctx.stroke(); }
+
+  function draw() {
+    const r = ROUNDS[R], t = st.t, u = prof(r.U || 0, r.G || 0);
+    ctx.clearRect(0, 0, W, H); if (r.text) return;
+    // walls, with chevrons showing a moving wall
+    hatch(0, WALL, true); hatch(H - WALL, H, false);
+    if (r.U !== 0 && !(r.reveal && st.phase !== 'done')) {
+      ctx.fillStyle = css('--ink'); ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'center';
+      const dir = r.U > 0 ? 1 : -1, shift = ((t * K * r.U * W) % 28 + 28) % 28;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, WALL); ctx.clip(); ctx.fillStyle = css('--surface'); ctx.fillRect(0, 2, W, WALL - 4);
+      ctx.fillStyle = css('--ink');
+      for (let x = -28; x < W + 28; x += 28) { const X = x + (r.U > 0 ? shift : -shift); ctx.beginPath(); ctx.moveTo(X, WALL / 2); ctx.lineTo(X - dir * 8, WALL / 2 - 5); ctx.lineTo(X - dir * 8, WALL / 2 + 5); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+    // the dye line: a column of particles at x0 advected by u(y)
+    ctx.strokeStyle = css('--dye'); ctx.lineWidth = 3.5; polyline(curvePts(u, t));
+    ctx.fillStyle = css('--dye'); for (let i = 0; i <= 12; i++) { const y = -1 + 2 * i / 12; ctx.beginPath(); ctx.arc(sx(X0 + K * u(y) * t), sy(y), 3, 0, 2 * Math.PI); ctx.fill(); }
+    if (st.phase === 'done' && st.truth && !r.text) {
+      const cInk = css('--key'); const big = Math.max(Math.abs(st.truth.tTop), Math.abs(st.truth.tBot), 1e-9);
+      for (const [tau, yw] of [[st.truth.tTop, WALL / 2], [st.truth.tBot, H - WALL / 2]]) {
+        if (Math.abs(tau) < 1e-9) continue; const L = 30 + 90 * Math.abs(tau) / big, dir = Math.sign(tau), xc = W * 0.5;
+        ctx.save(); ctx.beginPath(); ctx.rect(0, yw - WALL / 2, W, WALL); ctx.clip(); ctx.fillStyle = css('--surface'); ctx.fillRect(xc - L / 2 - 8, yw - WALL / 2 + 1, L + 16, WALL - 2); ctx.restore();
+        ctx.strokeStyle = cInk; ctx.fillStyle = cInk; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(xc - dir * L / 2, yw); ctx.lineTo(xc + dir * L / 2 - dir * 8, yw); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xc + dir * L / 2, yw); ctx.lineTo(xc + dir * L / 2 - dir * 12, yw - 7); ctx.lineTo(xc + dir * L / 2 - dir * 12, yw + 7); ctx.closePath(); ctx.fill();
+      }
+    }
+    // release line
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(sx(X0), WALL); ctx.lineTo(sx(X0), H - WALL); ctx.stroke(); ctx.setLineDash([]);
+  }
+  const labels = [];
+  function makeLabels() {
+    labels.length = 0; stage.querySelectorAll('.lab, .mlab').forEach(e => e.remove());
+    const r = ROUNDS[R];
+    (r.cands || []).forEach(c => { const e = document.createElement('div'); e.className = 'lab'; e.textContent = c.k; e.style.background = css(CCOL[c.k]); stage.append(e); labels.push([c, e]); });
+    $('cond').innerHTML = r.text ? '' : (r.U !== 0 ? '<span>top wall: \\(U\\) ' + (r.U > 0 ? '→' : '←') + '</span>' : '<span>both walls fixed</span>') + (r.G !== 0 ? '<span>pressure: \\(\\mathrm{d}p/\\mathrm{d}x' + (r.G > 0 ? '<0\\) (pushes →)' : '>0\\) (pushes ←)') + '</span>' : '<span>no pressure gradient</span>');
+  }
+  function placeLabels() {
+    return; labels.forEach(([c, e], i) => { const yl = [0.55, 0, -0.55][i]; e.style.left = (sx(X0 + K * c.f(yl) * r.T) + 16) + 'px'; e.style.top = sy(yl) + 'px'; });
+  }
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '.legend', '#brief', '#cond']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('q').textContent = r.text ? 'Your answer' : 'Predict, then release the dye';
+    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (r.text ? ' wide' : ' groups');
+    st.picks = {};
+    if (r.text) {
+      r.opts.forEach(o => { const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = o.v; b.dataset.g = 'x'; b.setAttribute('aria-pressed', 'false'); b.textContent = o.k;
+        b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.picks.x = o.v; st.choice = 'x'; $('go').disabled = false; }; box.append(b); });
+    } else {
+      const groups = [['top', 'Force on the top wall'], ['bot', 'Force on the bottom wall']]; if (r.ask3) groups.push(['more', 'Which wall feels more?']);
+      groups.forEach(([g, label]) => {
+        const h = document.createElement('div'); h.className = 'glabel'; h.textContent = label; box.append(h);
+        const row = document.createElement('div'); row.className = 'grow';
+        const opts = g === 'more' ? [['top', 'top'], ['same', 'equal'], ['bot', 'bottom']] : [['L', '←'], ['0', 'none'], ['R', '→']];
+        opts.forEach(([v, lab]) => { const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = v; b.dataset.g = g; b.setAttribute('aria-pressed', 'false'); b.textContent = lab;
+          b.onclick = () => { if (st.phase !== 'predict') return; row.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.picks[g] = v; st.choice = 'x'; $('go').disabled = !groups.every(([gg]) => st.picks[gg]); }; row.append(b); });
+        box.append(row);
+      });
+    }
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    makeLabels(); fitScale(); renderDots(); size(); $('cond').hidden = !!r.reveal; typeset([$('brief'), $('cond')]);
+    $('go').textContent = r.text ? 'Lock in' : 'Release the dye'; $('stage').hidden = !!r.text; $('cond').hidden = !!r.text; document.querySelector('.legend[aria-hidden]').hidden = !!r.text;
+  }
+  function run(done) {
+    const r = ROUNDS[R]; st.phase = 'run'; st.t = 0; snd.pour(); let last = performance.now();
+    function step(now) { const real = Math.min(0.05, (now - last) / 1000); last = now; st.t = reduceMotion ? r.T : Math.min(r.T, st.t + real * 0.5); draw(); if (st.t < r.T) requestAnimationFrame(step); else done(); }
+    requestAnimationFrame(step);
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    if (ROUNDS[R].text) finish(); else run(finish);
+  });
+  function truthOf(r) {
+    if (r.text) return { x: r.opts.find(o => o.ok).v };
+    const g = dudy(r.U, r.G), tTop = -g(1), tBot = g(-1), sgn = v => Math.abs(v) < 1e-9 ? '0' : v > 0 ? 'R' : 'L';
+    const t = { top: sgn(tTop), bot: sgn(tBot), tTop, tBot }; if (r.ask3) t.more = Math.abs(tTop) > Math.abs(tBot) + 1e-9 ? 'top' : Math.abs(tBot) > Math.abs(tTop) + 1e-9 ? 'bot' : 'same'; return t;
+  }
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R], tr = truthOf(r); st.truth = tr;
+    const keys = r.text ? ['x'] : (r.ask3 ? ['top', 'bot', 'more'] : ['top', 'bot']);
+    const nOk = keys.filter(k => st.picks[k] === tr[k]).length, ok = nOk === keys.length; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { c.disabled = true; const g = c.dataset.g; if (c.dataset.v === tr[g]) c.classList.add('right'); else if (c.dataset.v === st.picks[g]) c.classList.add('wrong'); });
+    let msg = ok ? 'Right. +10' : (nOk ? nOk + ' of ' + keys.length + ' right. +0' : 'Not this time. +0');
+    if (!r.text) msg += ' Wall stress: top \\(' + tr.tTop.toFixed(1) + '\\), bottom \\(' + tr.tBot.toFixed(1) + '\\) (units of \\(\\mu U/H\\) with \\(U=H=1\\)).';
+    $('result').innerHTML = msg; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    $('cond').hidden = !!r.text; renderDots(); draw(); typeset([db, $('result')]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🏆🧱' : fr >= 0.7 ? '🧱' : fr >= 0.4 ? '🧭' : '🔁'; $('emo').className = 'emo' + (fr >= 0.7 ? ' go' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
