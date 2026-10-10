@@ -1,0 +1,278 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Pipe Doctor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Two pipes side by side (before / after), a flux gauge for each, a grid of multipliers to pick from. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --dye: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B; --fluid: #DCE9F7;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --fluid: #1F2B3A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --dye: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; --fluid: #1F2B3A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: stretch; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; width: 100%; }
+.plab { position: absolute; font-size: 15px; color: var(--ink); pointer-events: none; }
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.g h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+.bar { height: 16px; border-radius: 8px; background: color-mix(in srgb, var(--line) 50%, transparent); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--flow); width: 0; transition: width .6s ease; }
+.g .val { font-size: 16px; font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.choice { font: 600 17px/1.2 var(--font-body); padding: 12px 4px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; text-align: center; font-variant-numeric: tabular-nums; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.beat { display: inline-block; animation: beat 1.1s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.15); } 60% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .emo.beat { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 56px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Two pipes side by side, before and after the change, with dye flowing through"></canvas>
+    <div class="plab" id="labA" style="left:8px;top:6px">before</div>
+    <div class="plab" id="labB" style="right:8px;top:6px">after</div>
+  </div>
+  <div class="gauges" aria-label="Flow rate gauges">
+    <div class="g"><h2>Before</h2><div class="bar"><i id="barA"></i></div><div class="val">\(Q\)</div></div>
+    <div class="g"><h2>After</h2><div class="bar"><i id="barB"></i></div><div class="val" id="valB">?</div></div>
+  </div>
+
+  <section class="card" id="card">
+    <p class="q" id="q">The flow rate becomes…</p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Open the valve</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 3, Hagen–Poiseuille flow · prototype</p>
+</div>
+
+<script>
+(function () {
+  // Q = π R⁴ Δp / (8 μ L). Each round changes one or two of R, μ, L, Δp; the player predicts the multiplier.
+  const MULT = ['×1/16', '×1/8', '×1/4', '×1/2', '×1', '×2', '×4', '×8', '×16'];
+  const PCT = ['90%', '81%', '73%', '66%', '59%', '50%'];
+  const ROUNDS = [
+    { title: 'Half the radius', brief: 'A fixed pressure difference drives laminar flow along a pipe. Replace it with a pipe of <b>half the radius</b>, same length, same fluid, same pressure difference. The flow rate becomes…',
+      R: 0.5, mu: 1, L: 1, dp: 1, opts: MULT, ans: '×1/16',
+      debrief: ['\\(Q=\\dfrac{\\pi R^4}{8\\mu}\\left(-\\dfrac{\\mathrm{d}p}{\\mathrm{d}z}\\right)\\propto R^4\\): halving \\(R\\) divides \\(Q\\) by 16.', 'Two factors of \\(R\\) from the cross-sectional area, two more from the speed, \\(w_{\\max}\\propto R^2\\): the wall is further from the fastest fluid in a wide pipe, so it shears it less.'] },
+    { title: 'Twice the viscosity', brief: 'Same pipe, same pressure difference, but the fluid is swapped for one with <b>twice the viscosity</b>. The flow rate becomes…',
+      R: 1, mu: 2, L: 1, dp: 1, opts: MULT, ans: '×1/2',
+      debrief: ['\\(Q\\propto1/\\mu\\): double the viscosity, half the flow. The profile keeps its parabolic shape; only its height changes.', 'Viscosity enters the Navier–Stokes equations linearly, and for this flow nothing else does.'] },
+    { title: 'Twice the length', brief: 'Same pipe radius and fluid, same pressure difference between the ends, but the pipe is <b>twice as long</b>. The flow rate becomes…',
+      R: 1, mu: 1, L: 2, dp: 1, opts: MULT, ans: '×1/2',
+      debrief: ['The same \\(\\Delta p\\) spread over twice the length is half the pressure <em>gradient</em>, and \\(Q\\propto-\\mathrm{d}p/\\mathrm{d}z\\).', 'What drives Poiseuille flow is the gradient, not the difference. A long pipe needs a big pump.'] },
+    { title: 'Half the radius, twice the pressure', brief: 'Half the radius again, but now the pump is turned up to <b>twice the pressure difference</b>. Same length and fluid. The flow rate becomes…',
+      R: 0.5, mu: 1, L: 1, dp: 2, opts: MULT, ans: '×1/8',
+      debrief: ['\\(\\tfrac{1}{16}\\times2=\\tfrac18\\). Doubling the pump recovers one factor of two out of sixteen.', 'The radius dominates everything else in this formula. That is why pipelines are wide and why a blocked pipe is hard to push through.'] },
+    { title: 'The narrowed artery', brief: 'An artery narrows by <b>10%</b> in radius. Same pressure difference, same length and blood. What fraction of the original flow gets through?',
+      R: 0.9, mu: 1, L: 1, dp: 1, opts: PCT, ans: '66%',
+      debrief: ['\\(0.9^4=0.656\\): a tenth off the radius takes a third off the flow.', 'The fourth power is why a modest narrowing matters so much, and why doubling a pipe\'s radius is worth sixteen pipes.'] }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let R = 0, st, results = ROUNDS.map(() => null), animStarted = false;
+  $('max').textContent = ROUNDS.length * 10;
+  const qOf = r => Math.pow(r.R, 4) * r.dp / (r.mu * r.L);
+
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    function noise(t0, dur, gain, f0, f1) {
+      const a = ctxA(); if (!a || !on) return; const n = a.sampleRate * dur, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const s = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; flt.type = 'bandpass'; flt.Q.value = 1.2;
+      flt.frequency.setValueAtTime(f0, a.currentTime + t0); flt.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain, a.currentTime + t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      s.connect(flt).connect(g).connect(a.destination); s.start(a.currentTime + t0);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      valve(q) { tone(140, 0, 0.15, 'square', 0.05); noise(0.1, 1.6, 0.12 + 0.18 * Math.min(1, q), 150, 400 + 900 * Math.min(1, q)); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn'); const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function fresh() { return { phase: 'predict', choice: null, t: 0, open: false }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+
+  let W = 300, H = 220;
+  function size() {
+    W = stage.clientWidth; H = Math.round(Math.min(240, Math.max(190, W * 0.55)));
+    const dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
+  }
+  // one pipe drawn in a box [x0, x1]; radius in px = Rpx; dye parcels advected with w(r) ∝ R² (1 − (r/R)²) · dp/(μ L)
+  function pipe(x0, x1, p, t, showFlow, dyeOffset) {
+    const cx = (x0 + x1) / 2, cy = H / 2 + 12, Rpx = 48 * p.R, len = (x1 - x0) * (p.L === 2 ? 0.98 : 0.6);
+    const px0 = cx - len / 2, px1 = cx + len / 2;
+    // fluid
+    ctx.fillStyle = css('--fluid'); ctx.fillRect(px0, cy - Rpx, len, 2 * Rpx);
+    // dye parcels: columns released at intervals, each a parabola
+    if (showFlow) {
+      const scale = Math.pow(p.R, 2) * p.dp / (p.mu * p.L); // w_max relative to the reference pipe
+      ctx.strokeStyle = css('--dye'); ctx.lineWidth = 2.5;
+      for (let k = 0; k < 6; k++) {
+        const t0 = k * 0.5; if (t < t0) continue;
+        const adv = (t - t0) * 60 * scale; if (adv > len + 10) continue;
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) { const r = -1 + 2 * i / 24; const x = px0 + 6 + adv * (1 - r * r); const y = cy + r * Rpx; if (i) ctx.lineTo(Math.min(x, px1), y); else ctx.moveTo(Math.min(x, px1), y); }
+        ctx.stroke();
+      }
+    }
+    // walls
+    ctx.strokeStyle = css('--wall'); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(px0, cy - Rpx); ctx.lineTo(px1, cy - Rpx); ctx.moveTo(px0, cy + Rpx); ctx.lineTo(px1, cy + Rpx); ctx.stroke();
+    // radius marker
+    ctx.strokeStyle = css('--muted'); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - Rpx); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = css('--muted'); ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, 2 * Math.PI); ctx.fill();
+    // pressure arrows at the inlet, count ∝ dp
+    ctx.fillStyle = css('--flow'); ctx.strokeStyle = css('--flow'); ctx.lineWidth = 2;
+    for (let k = 0; k < p.dp; k++) { const y = cy - 8 + 16 * k - 8 * (p.dp - 1); ctx.beginPath(); ctx.moveTo(px0 - 26, y); ctx.lineTo(px0 - 8, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(px0 - 4, y); ctx.lineTo(px0 - 12, y - 5); ctx.lineTo(px0 - 12, y + 5); ctx.closePath(); ctx.fill(); }
+    // viscosity: a label glyph
+    ctx.fillStyle = css('--muted'); ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'center';
+    if (p.mu === 2) ctx.fillText('twice the viscosity', cx, cy + Rpx + 18);
+    if (p.L === 2) ctx.fillText('twice as long', cx, cy - Rpx - 10);
+  }
+  function draw() {
+    const r = ROUNDS[R], t = st.t; ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2, 8); ctx.lineTo(W / 2, H - 8); ctx.stroke();
+    pipe(0, W / 2, { R: 1, mu: 1, L: 1, dp: 1 }, t, true);
+    pipe(W / 2, W, r, t, st.open);
+    $('barA').style.width = '50%';
+    $('barB').style.width = st.open ? Math.min(100, 50 * qOf(r)) + '%' : '0%';
+  }
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '.gauges', '#brief']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
+    $('q').textContent = r.opts === PCT ? 'The flow becomes…' : 'The flow rate becomes…';
+    const box = $('choices'); box.innerHTML = ''; box.style.gridTemplateColumns = r.opts === PCT ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)';
+    r.opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = o; b.setAttribute('aria-pressed', 'false'); b.textContent = o;
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = o; $('go').disabled = false; };
+      box.append(b);
+    });
+    $('valB').textContent = '?';
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); size(); typeset([$('brief')]);
+    // the reference pipe flows all the time
+    if (!animStarted) { animStarted = true; let last = performance.now(); const loop = now => { const real = Math.min(0.05, (now - last) / 1000); last = now; st.t += real; draw(); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+  }
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    const r = ROUNDS[R]; st.phase = 'run'; st.open = true; st.t = 0; snd.valve(qOf(r));
+    $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    setTimeout(finish, reduceMotion ? 50 : 2600);
+  });
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R], ok = st.choice === r.ans; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { if (c.dataset.v === r.ans) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    const q = qOf(r); $('valB').innerHTML = r.opts === PCT ? Math.round(q * 100) + '% of \\(Q\\)' : (q >= 1 ? q : '1/' + Math.round(1 / q)) + ' \\(\\times Q\\)';
+    $('result').textContent = ok ? 'Right. +10' : 'Not this time. +0'; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([db, $('valB')]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else { const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🩺🏆' : fr >= 0.7 ? '🩺' : fr >= 0.4 ? '🫀' : '🚑'; $('emo').className = 'emo' + (fr >= 0.4 ? ' beat' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
