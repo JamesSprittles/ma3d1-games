@@ -1,0 +1,381 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">
+<title>Which Way Will It Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Round card, the flow with candidate curves, A/B/C prediction, release, debrief. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --path: #C24A00; --key: #C0392B; --good: #0B7A55;
+  --ca: #7D3C98; --cb: #009E73; --cc: #E8A33D;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --path: #FF9A5C; --key: #F0756A; --good: #4CC79A; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --path: #FF9A5C; --key: #F0756A; --good: #4CC79A; --ca: #C39BD3; --cb: #4CC79A; --cc: #F2B95A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 16px; min-width: 0; }
+.stage { position: relative; align-self: center; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+canvas { display: block; }
+.lab { position: absolute; transform: translate(-50%, -50%); pointer-events: none; font: 700 15px/1 var(--font-body); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+.status { position: absolute; left: 8px; top: 6px; right: 8px; display: flex; justify-content: space-between; gap: 8px; font-size: 15px; color: var(--muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+.status span { background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 4px; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--muted); justify-content: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--path); }
+.legend i.dash { border-top: 2px dashed var(--flow); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 12px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.choice .sw { width: 26px; height: 26px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); }
+.choice.wrong { border-color: var(--key); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 14px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible, .choice:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; min-height: 1.4em; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 10px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.final .big { font-size: 56px !important; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.go { display: inline-block; animation: go 2.4s ease-in-out infinite; }
+@keyframes go { 0%, 100% { transform: translateX(-10px); } 50% { transform: translateX(10px); } }
+@media (prefers-reduced-motion: reduce) { .emo.go { animation: none; } }
+.verdict { margin: 0; font-weight: 600; }
+.final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13.5px; color: var(--muted); text-align: center; }
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Velocity field with candidate curves and a particle"></canvas>
+    <div class="status"><span id="phase"></span><span>\(t=\) <span id="clock">0</span></span></div>
+  </div>
+  <div class="legend" aria-hidden="true">
+    <span><i class="dash"></i>streamline through the particle, now</span>
+    <span><i></i>particle path</span>
+  </div>
+
+  <section class="card" id="card">
+    <p class="q" id="q"></p>
+    <div class="choices" id="choices" role="group" aria-label="Your prediction"></div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Release</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 Fluid Dynamics · Chapter 2, streamlines and particle paths · prototype</p>
+</div>
+
+<script>
+(function () {
+  const PI = Math.PI;
+  const lin = (a, b, n, f) => Array.from({ length: n + 1 }, (_, i) => f(a + (b - a) * i / n));
+  // Each round: a field vel(x,y,t), release point(s) and time(s), and either curve candidates (A/B/C drawn on the canvas) or text options.
+  const ROUNDS = [
+    {
+      title: 'A steady flow', brief: 'The flow is \\(\\underline{u}=(1,\\,0.8\\cos x)\\). It varies from place to place but never changes in time. A particle is released from the origin at \\(t=0\\). Which curve will it follow?',
+      q: 'Which curve is the particle path?',
+      dom: { x0: -0.3, x1: 3.5, y0: -1.3, y1: 1.5 }, t0: 0, T: 3.2, speed: 1, rel: [{ x: 0, y: 0, tau: 0 }],
+      vel: (x, y, t) => [1, 0.8 * Math.cos(x)],
+      cands: [
+        { k: 'A', pts: lin(0, 3.2, 80, x => [x, 0.8 * Math.sin(x)]), ok: true },
+        { k: 'B', pts: lin(0, 3.2, 2, x => [x, 0.8 * x]) },
+        { k: 'C', pts: lin(0, 3.2, 80, x => [x, -0.8 * Math.sin(x)]) }
+      ],
+      debrief: ['The dashed streamline never moved, because \\(\\underline{u}\\) does not depend on \\(t\\). The particle rode along it: in a steady flow the particle path <b>is</b> the streamline.', 'B follows the arrow at the origin for ever; C has the curvature backwards.']
+    },
+    {
+      title: 'The lecture flow', brief: 'The flow is \\(\\underline{u}=(u_0,\\,kt)\\) with \\(u_0=k=1\\): the same everywhere, tilting upwards as time goes on. Watch the arrows. A particle is released from the origin at \\(t=0\\). Which curve will it follow?',
+      q: 'Which curve is the particle path?',
+      dom: { x0: -0.3, x1: 2.5, y0: -0.4, y1: 2.6 }, t0: 0, T: 2.2, speed: 0.9, rel: [{ x: 0, y: 0, tau: 0 }],
+      vel: (x, y, t) => [1, t],
+      cands: [
+        { k: 'A', pts: lin(0, 2.4, 2, x => [x, 0]) },
+        { k: 'B', pts: lin(0, 2.2, 80, x => [x, x * x / 2]), ok: true },
+        { k: 'C', pts: lin(0, 2.4, 2, x => [x, x]) }
+      ],
+      debrief: ['At \\(t=0\\) the streamline through the origin is A, the \\(x\\)-axis, and the particle sets off along it. But the arrows tilt, so it leaves A at once: \\(x=t,\\ y=\\tfrac12t^2\\), the parabola B.', 'C is the streamline at \\(t=1\\): the particle crosses it, tangentially, at the moment \\(t=1\\). The path is tangent to a <em>different</em> streamline at every instant.']
+    },
+    {
+      title: 'The spinning stream', brief: 'The flow is \\(\\underline{u}=(\\cos t,\\,\\sin t)\\): the same velocity everywhere, turning anticlockwise as time goes on. A particle is released from the origin at \\(t=0\\). Which curve will it follow?',
+      q: 'Which curve is the particle path?',
+      dom: { x0: -1.5, x1: 1.9, y0: -0.5, y1: 2.5 }, t0: 0, T: 2 * PI, speed: 1.4, rel: [{ x: 0, y: 0, tau: 0 }],
+      vel: (x, y, t) => [Math.cos(t), Math.sin(t)],
+      cands: [
+        { k: 'A', pts: lin(0, 1.7, 2, x => [x, 0]) },
+        { k: 'B', pts: lin(0, 1.6, 2, s => [s * Math.SQRT1_2, s * Math.SQRT1_2]) },
+        { k: 'C', pts: lin(0, 2 * PI, 100, t => [Math.sin(t), 1 - Math.cos(t)]), ok: true }
+      ],
+      debrief: ['The streamlines are straight lines at every instant, yet no particle moves on one. The velocity turns at a steady rate, so the particle goes round the circle C of radius \\(U/\\Omega=1\\): \\(\\underline{x}=(\\sin t,\\,1-\\cos t)\\).', 'A is the streamline at release; B points along the average velocity over the first quarter turn. Neither is a path.']
+    },
+    {
+      title: 'Two releases, unsteady', brief: 'Back to \\(\\underline{u}=(u_0,\\,kt)\\). A first particle is released from the origin at \\(t=0\\) and a second one from the <em>same point</em> at \\(t=1\\). Will the second follow the first?',
+      q: 'The second particle\'s path is…',
+      dom: { x0: -0.3, x1: 2.6, y0: -0.4, y1: 3.2 }, t0: 0, T: 2.4, speed: 0.9, rel: [{ x: 0, y: 0, tau: 0 }, { x: 0, y: 0, tau: 1 }],
+      vel: (x, y, t) => [1, t],
+      opts: [{ k: 'Same curve', v: 'same' }, { k: 'Same curve, behind', v: 'behind' }, { k: 'A different curve', v: 'diff' }], truth: 'diff',
+      debrief: ['Different. The second particle sets off into a flow that has already tilted, so its path is \\(y=\\tfrac12x^2+x\\), steeper from the start than the first\'s \\(y=\\tfrac12x^2\\).', 'In an unsteady flow the particle path depends on the release time as well as the release point. Both paths were tangent to the streamline through the origin at their own release instant: \\(y=0\\) and \\(y=x\\).']
+    },
+    {
+      title: 'Two releases, steady', brief: 'Back to the steady flow \\(\\underline{u}=(1,\\,0.8\\cos x)\\). A first particle is released from the origin at \\(t=0\\) and a second from the same point at \\(t=1\\). Will the second follow the first?',
+      q: 'The second particle\'s path is…',
+      dom: { x0: -0.3, x1: 3.5, y0: -1.3, y1: 1.5 }, t0: 0, T: 3.4, speed: 1, rel: [{ x: 0, y: 0, tau: 0 }, { x: 0, y: 0, tau: 1 }],
+      vel: (x, y, t) => [1, 0.8 * Math.cos(x)],
+      opts: [{ k: 'Same curve', v: 'same' }, { k: 'Same curve, behind', v: 'behind' }, { k: 'A different curve', v: 'diff' }], truth: 'behind',
+      debrief: ['The same curve, one second behind. Nothing in the flow depends on \\(t\\), so a later start sees exactly the same arrows and retraces the earlier path.', 'This is why particle paths, streamlines (and streaklines) all coincide in steady flow, and why a steady photograph of a flow shows you where the fluid is going.']
+    }
+  ];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // ---------- sound (synthesised, no files) ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    function noise(t0, dur, gain, f0, f1) {
+      const a = ctxA(); if (!a || !on) return; const n = a.sampleRate * dur, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const s = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain(); s.buffer = buf; flt.type = 'bandpass'; flt.Q.value = 1.2;
+      flt.frequency.setValueAtTime(f0, a.currentTime + t0); flt.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain, a.currentTime + t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      s.connect(flt).connect(g).connect(a.destination); s.start(a.currentTime + t0);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      wake() { ctxA(); },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      horn() { tone(110, 0, 0.9, 'sawtooth', 0.12, 104); tone(165, 0, 0.9, 'square', 0.04, 156); },
+      whoosh() { noise(0, 0.8, 0.25, 300, 2400); },
+      click() { tone(1800, 0, 0.025, 'square', 0.06); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); } // the trombone
+      }
+    };
+  })();
+  const sndBtn = document.getElementById('sndBtn');
+  if (sndBtn) { const paint = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); }; paint(); sndBtn.addEventListener('click', () => { snd.toggle(); paint(); }); }
+  const CCOL = { A: '--ca', B: '--cb', C: '--cc' };
+
+  function fresh() { const r = ROUNDS[R]; return { phase: 'predict', choice: null, t: r.t0, parts: r.rel.map(p => ({ ...p, pos: { x: p.x, y: p.y }, trail: [] })) }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).then(placeLabels).catch(() => {}); }
+
+  let W = 300, H = 300, scale = 1;
+  function size() {
+    const d = ROUNDS[R].dom, aspect = (d.x1 - d.x0) / (d.y1 - d.y0);
+    const maxW = Math.min(stage.parentElement.clientWidth - 32, 528), maxH = Math.max(230, window.innerHeight * 0.44);
+    W = maxW; H = W / aspect; if (H > maxH) { H = maxH; W = H * aspect; }
+    W = Math.round(W); H = Math.round(H);
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); scale = W / (d.x1 - d.x0); draw(); placeLabels();
+  }
+  const sx = x => (x - ROUNDS[R].dom.x0) * scale, sy = y => (ROUNDS[R].dom.y1 - y) * scale;
+  const inDom = (x, y, m) => { const d = ROUNDS[R].dom; return x > d.x0 - m && x < d.x1 + m && y > d.y0 - m && y < d.y1 + m; };
+
+  function arrow(x, y, ux, uy, len, col) {
+    const ang = Math.atan2(-uy, ux), X = sx(x), Y = sy(y), ex = X + len * Math.cos(ang), ey = Y + len * Math.sin(ang);
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(ex, ey); ctx.stroke();
+    const h = Math.min(6, len * 0.45);
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - h * Math.cos(ang - 0.45), ey - h * Math.sin(ang - 0.45)); ctx.lineTo(ex - h * Math.cos(ang + 0.45), ey - h * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
+  }
+  function streamline(p, t) {
+    const r = ROUNDS[R], ds = (r.dom.x1 - r.dom.x0) / 300, out = [];
+    for (const dir of [-1, 1]) {
+      let x = p.x, y = p.y; const seg = [[x, y]];
+      const f = (a, b) => { const v = r.vel(a, b, t), n = Math.hypot(v[0], v[1]) || 1; return [dir * v[0] / n, dir * v[1] / n]; };
+      for (let i = 0; i < 900; i++) {
+        const k1 = f(x, y), k2 = f(x + ds / 2 * k1[0], y + ds / 2 * k1[1]), k3 = f(x + ds / 2 * k2[0], y + ds / 2 * k2[1]), k4 = f(x + ds * k3[0], y + ds * k3[1]);
+        x += ds / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]); y += ds / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+        seg.push([x, y]); if (!inDom(x, y, 0.1)) break;
+      }
+      out.push(seg);
+    }
+    return out;
+  }
+  function polyline(pts) { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(sx(q[0]), sy(q[1])) : ctx.moveTo(sx(q[0]), sy(q[1]))); ctx.stroke(); }
+
+  function draw() {
+    const r = ROUNDS[R], d = r.dom, cFlow = css('--flow'), cPath = css('--path'), cInk = css('--ink'), cLine = css('--line');
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = cLine; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx(d.x0), sy(0)); ctx.lineTo(sx(d.x1), sy(0)); ctx.moveTo(sx(0), sy(d.y0)); ctx.lineTo(sx(0), sy(d.y1)); ctx.stroke();
+    // arrows at the current time
+    const n = 7, cell = Math.min(W, H) / n; let umax = 0; const pts = [];
+    for (let i = 0; i < Math.ceil(W / cell); i++) for (let j = 0; j < Math.ceil(H / cell); j++) {
+      const x = d.x0 + (i + 0.5) * cell / scale, y = d.y1 - (j + 0.5) * cell / scale, v = r.vel(x, y, st.t), m = Math.hypot(v[0], v[1]);
+      if (m > 1e-9) { pts.push([x, y, v, m]); umax = Math.max(umax, m); }
+    }
+    ctx.globalAlpha = 0.45; pts.forEach(([x, y, v, m]) => arrow(x, y, v[0], v[1], cell * 0.7 * m / umax, cFlow)); ctx.globalAlpha = 1;
+    // candidate curves
+    if (r.cands) {
+      r.cands.forEach(c => {
+        const col = css(CCOL[c.k]); ctx.strokeStyle = col; ctx.lineWidth = st.choice === c.k ? 4 : 2.5;
+        ctx.globalAlpha = st.phase === 'predict' || st.choice === c.k || c.ok ? 0.9 : 0.35; polyline(c.pts); ctx.globalAlpha = 1;
+      });
+    }
+    // streamline through each particle, now (dashed); trails; particles
+    st.parts.forEach((p, i) => {
+      ctx.strokeStyle = cFlow; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.globalAlpha = i ? 0.6 : 0.9;
+      streamline(p.pos, st.t).forEach(s => polyline(s)); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    });
+    st.parts.forEach((p, i) => {
+      if (p.trail.length > 1) { ctx.strokeStyle = cPath; ctx.lineWidth = 3.5; if (i) ctx.setLineDash([2, 4]); polyline(p.trail); ctx.setLineDash([]); }
+      ctx.fillStyle = i ? css('--surface') : cPath; ctx.strokeStyle = cPath; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(sx(p.pos.x), sy(p.pos.y), 7, 0, 2 * PI); ctx.fill(); ctx.stroke();
+    });
+    $('clock').textContent = st.t.toFixed(2);
+    $('phase').textContent = st.phase === 'predict' ? (r.cands ? 'Pick A, B or C' : 'Predict, then release') : st.phase === 'run' ? 'Moving with the fluid' : 'Done';
+  }
+  // letter labels at the end of each candidate curve
+  const labels = [];
+  function makeLabels() {
+    labels.length = 0; stage.querySelectorAll('.lab').forEach(e => e.remove());
+    (ROUNDS[R].cands || []).forEach(c => { const e = document.createElement('div'); e.className = 'lab'; e.textContent = c.k; e.style.background = css(CCOL[c.k]); stage.append(e); labels.push([c, e]); });
+  }
+  function placeLabels() {
+    labels.forEach(([c, e]) => {
+      const d = ROUNDS[R].dom, m = 0.42; // keep labels clear of the status bar and the edges
+      let q = c.pts[c.pts.length - 1];
+      for (let i = c.pts.length - 1; i >= 0; i--) { const p = c.pts[i]; if (p[0] < d.x1 - m && p[1] < d.y1 - m && p[1] > d.y0 + m) { q = p; break; } }
+      e.style.left = (sx(q[0]) + 14) + 'px'; e.style.top = (sy(q[1]) - 6) + 'px';
+    });
+  }
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] ? 'right' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s ? 10 : 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '.legend', '#brief', '.ckey', '.graphs', '#pill']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief; $('q').textContent = r.q;
+    const box = $('choices'); box.innerHTML = '';
+    const items = r.cands ? r.cands.map(c => ({ k: c.k, v: c.k, sw: true })) : r.opts.map(o => ({ k: o.k, v: o.v }));
+    items.forEach(it => {
+      const b = document.createElement('button'); b.className = 'choice'; b.type = 'button'; b.dataset.v = it.v; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = (it.sw ? '<span class="sw" style="background:' + css(CCOL[it.k]) + '">' + it.k + '</span>' : '') + (it.sw ? 'Curve ' + it.k : it.k);
+      b.onclick = () => { if (st.phase !== 'predict') return; box.querySelectorAll('.choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.choice = it.v; $('go').disabled = false; draw(); };
+      box.append(b);
+    });
+    $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    makeLabels(); renderDots(); size(); typeset([$('brief')]);
+  }
+
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.choice === null) return;
+    const r = ROUNDS[R]; st.phase = 'run'; st.t = r.t0;
+    $('go').disabled = true; document.querySelectorAll('.choice').forEach(c => c.disabled = true);
+    snd.whoosh();
+    let last = performance.now();
+    function step(now) {
+      const real = Math.min(0.05, (now - last) / 1000); last = now;
+      const dt = reduceMotion ? r.T : real * r.speed, sub = Math.max(1, Math.ceil(dt / 0.004)), h = dt / sub;
+      for (let k = 0; k < sub; k++) {
+        st.parts.forEach(p => {
+          if (st.t < p.tau) return;
+          if (!p.trail.length) p.trail.push([p.pos.x, p.pos.y]);
+          let { x, y } = p.pos; const t = st.t, f = r.vel;
+          const k1 = f(x, y, t), k2 = f(x + h / 2 * k1[0], y + h / 2 * k1[1], t + h / 2), k3 = f(x + h / 2 * k2[0], y + h / 2 * k2[1], t + h / 2), k4 = f(x + h * k3[0], y + h * k3[1], t + h);
+          p.pos = { x: x + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), y: y + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]) };
+        });
+        st.t += h;
+      }
+      st.parts.forEach(p => { if (p.trail.length) p.trail.push([p.pos.x, p.pos.y]); });
+      draw();
+      if (st.t < r.t0 + r.T) requestAnimationFrame(step); else finish();
+    }
+    requestAnimationFrame(step);
+  });
+
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R];
+    const truth = r.cands ? r.cands.find(c => c.ok).k : r.truth, ok = st.choice === truth; results[R] = ok; if (ok) snd.ok(); else snd.no();
+    document.querySelectorAll('.choice').forEach(c => { if (c.dataset.v === truth) c.classList.add('right'); else if (c.dataset.v === st.choice) c.classList.add('wrong'); });
+    $('result').textContent = ok ? 'Right. +10' : 'Not this time. +0'; $('result').className = 'result ' + (ok ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); draw(); typeset([db]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else {
+      const tot = results.reduce((a, s) => a + (s ? 10 : 0), 0), fr = tot / (ROUNDS.length * 10);
+      const v = fr === 1 ? ['🏄', 'Perfect. You always know which way the water is going.'] : fr >= 0.7 ? ['🛶', 'Good. One current caught you out.'] : fr >= 0.4 ? ['🌊🤷', 'Swept along. Remember: the arrows you see now are not the arrows you will meet.'] : ['🫧', 'Lost at sea. Re-read §2.5: particle paths integrate the velocity in time.'];
+      $('emo').textContent = v[0]; $('emo').className = 'emo' + (fr >= 0.7 ? ' go' : ''); 
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot; typeset([$('final')]);
+    }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+})();
+</script>
+</body></html>
