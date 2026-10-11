@@ -100,8 +100,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
   <div class="stage" id="stage">
     <canvas id="cv" role="img" aria-label="A river carrying dye past a fixed probe and a drifting boat"></canvas>
     <div class="clock">\(t=\) <span id="clock"></span></div>
-    <div class="ulab" id="ulab">\(u_0=1\)</div>
-    <div class="ulab" id="vlab" hidden>\(v\)</div>
+    <div class="ulab" id="ulab">\(u_0=\)<span id="u0n">1</span></div>
   </div>
 
   <div class="ckey" aria-label="Colour key for the dye concentration"><span>clear water, <b>low \(c\)</b></span><i></i><span>dark dye, <b>high \(c\)</b></span></div>
@@ -119,7 +118,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
       <div class="choices" id="chB" role="group" aria-label="Boat prediction"></div>
     </div>
     <div id="motor" hidden>
-      <div class="row"><label for="v">Boat speed \(v\)</label><input type="range" id="v" min="-2" max="3" step="0.1" value="1"><output id="vo" for="v"></output></div>
+      <div class="row"><label for="v">River \(u_0\)</label><input type="range" id="v" min="-1" max="3" step="0.1" value="1"><output id="vo" for="v"></output></div>
       <p class="brief" id="motorNote"></p>
     </div>
     <div class="actions">
@@ -149,7 +148,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     { v: 'down', label: 'Falling', path: 'M3 4L27 16' },
     { v: 'updown', label: 'Up, then down', path: 'M3 16Q15 -6 27 16' }
   ];
-  // c(x,t) in [0,1]-ish; the probe sits at x=3, the boat starts at x=1 and drifts at U0 (or v in the motor round)
+  // c(x,t) in [0,1]-ish; the probe sits at x=3, the boat starts at x=1 and drifts with the river at U0 (or the chosen u0 = st.v in round 3)
   const ROUNDS = [
     {
       title: 'Dye that fades downstream', brief: 'Dark upstream, pale downstream, never changing: \\(c=c(x)\\). River flows right at \\(u_0=1\\).',
@@ -162,9 +161,9 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
       debrief: ['Probe: \\(\\partial c/\\partial t=-0.15\\), falling. Boat: \\(Dc/Dt=-0.15+u_0\\times0.1=-0.05\\), also falling, but more slowly: it drifts towards darker water as the dye fades.', 'The two terms compete. Change the boat\'s speed and its reading can hold steady or even rise, which is the last round.']
     },
     {
-      title: 'Motorboat on still water', brief: 'Same dye, \\(c=c_0+0.1x-0.15t\\), but the water is <b>still</b>: \\(u_0=0\\). The boat has a motor. <b>Choose its speed \\(v\\) so that its reading stays constant.</b> One attempt.',
+      title: 'You set the river speed', brief: 'Same dye, \\(c=c_0+0.1x-0.15t\\). Now <b>you choose the river speed \\(u_0\\)</b>. <b>Pick it so that the drifting boat\'s reading stays constant.</b> One attempt.',
       c: (x, t) => 0.3 + 0.1 * x - 0.15 * t, ct: -0.15, cx: 0.1, motor: true, vstar: 1.5,
-      debrief: ['A boat moving at speed \\(v\\) records \\(\\partial c/\\partial t+v\\,\\partial c/\\partial x=-0.15+0.1v\\). Steady needs \\(v=1.5\\). The water being still changes nothing: what the sensor sees depends on how the sensor moves through the field.', 'The material derivative is the special case \\(v=u_0\\): the observer who moves with the fluid. Here \\(u_0=0\\), so \\(Dc/Dt=\\partial c/\\partial t=-0.15\\) is what the bank probe reads.']
+      debrief: ['The drifting boat records \\(Dc/Dt=\\partial c/\\partial t+u_0\\,\\partial c/\\partial x\\), here \\(-0.15+0.1u_0\\). Steady needs \\(u_0=1.5\\): the river carries the boat into darker water exactly fast enough to cancel the fading.', 'Same field as round 2; only \\(u_0\\) changed. The bank probe still reads \\(\\partial c/\\partial t=-0.15\\) whatever the river does. The two observers differ by exactly the advection term \\(u_0\\,\\partial c/\\partial x\\).']
     }
   ];
   const PTS = [10, 10]; // per sensor; motor round scores 20
@@ -259,13 +258,13 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     ctx.globalAlpha = 1;
     hatch(0, top); hatch(bot, H);
     // flow arrows: ink with a pale halo so they read on dark and pale dye alike
-    const ya = top + (bot - top) * 0.27, L = 0.5 / (XR - XL) * (W - 28);
-    for (const x of (r.motor ? [] : [0.7, 1.9, 4.1, 5.5, 6.9])) {
-      const X = sx(x);
+    const u = r.motor ? st.v : U0, ya = top + (bot - top) * 0.27, L = Math.sign(u) * Math.min(0.95, 0.5 * Math.abs(u)) / (XR - XL) * (W - 28), d = Math.sign(L), La = Math.abs(L);
+    if (La > 4) for (const x of [1.9, 4.1, 5.5, 6.9]) {
+      const X = sx(x), x0 = X - L / 2, x1 = X + L / 2;
       for (const [col, lw] of [[cSurf, 6], [cInk, 2.5]]) {
         ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(X - L / 2, ya); ctx.lineTo(X + L / 2 - 4, ya); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(X + L / 2, ya); ctx.lineTo(X + L / 2 - 9, ya - 6); ctx.lineTo(X + L / 2 - 9, ya + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x0, ya); ctx.lineTo(x1 - 4 * d, ya); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x1, ya); ctx.lineTo(x1 - 9 * d, ya - 6); ctx.lineTo(x1 - 9 * d, ya + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke();
       }
     }
     // probe: a person standing on the bank at x = 3, drawn on a cleared patch of bank, holding a rod with the sensor in the water
@@ -284,16 +283,9 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     ctx.strokeStyle = cInk; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Xb - 6, shb); ctx.lineTo(Xb + 8, shb + 6); ctx.stroke(); // arm
     ctx.strokeStyle = cBoat; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Xb + 14, shb + 4); ctx.lineTo(Xb + 26, yb + 12); ctx.stroke(); // sensor line over the side
     ctx.fillStyle = cBoat; ctx.beginPath(); ctx.arc(Xb + 27, yb + 14, 5, 0, 2 * Math.PI); ctx.fill();
-    ctx.fillStyle = cInk; ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText(r.motor ? 'motorboat' : 'boat', Xb - 12, yb + 20);
-    // motorboat: its own velocity arrow, length proportional to v, drawn above the boat
-    const vl = $('vlab'); vl.hidden = !r.motor;
-    if (r.motor) { const Lv = st.v / (XR - XL) * (W - 28) * 0.5, ya2 = yb - 48, x0 = Xb, x1 = Xb + Lv;
-      if (Math.abs(Lv) > 4) for (const [col, lw] of [[cSurf, 6], [cBoat, 2.5]]) { const d = Math.sign(Lv); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.beginPath(); ctx.moveTo(x0, ya2); ctx.lineTo(x1 - 4 * d, ya2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x1, ya2); ctx.lineTo(x1 - 9 * d, ya2 - 6); ctx.lineTo(x1 - 9 * d, ya2 + 6); ctx.closePath(); ctx.fill(); if (lw === 6) ctx.stroke(); }
-      vl.style.left = (Math.min(x0, x1) + Math.abs(Lv) / 2 - 8) + 'px'; vl.style.top = (ya2 - 26) + 'px'; }
+    ctx.fillStyle = cInk; ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.fillText('boat', Xb - 12, yb + 20);
     $('clock').textContent = t.toFixed(1);
-    const ul = $('ulab'); ul.hidden = !!r.motor; ul.style.left = (sx(0.7) - L / 2) + 'px'; ul.style.top = (ya - 26) + 'px';
+    const ul = $('ulab'); $('u0n').textContent = r.motor ? u.toFixed(1) : '1'; ul.style.left = (sx(0.2)) + 'px'; ul.style.top = (top + 2) + 'px';
     graph(gA, st.recA, cBank); graph(gB, st.recB, cBoat);
     $('vAn').textContent = st.recA.length ? st.recA[st.recA.length - 1][1].toFixed(2) : r.c(3, 0).toFixed(2);
     $('vBn').textContent = st.recB.length ? st.recB[st.recB.length - 1][1].toFixed(2) : r.c(1, 0).toFixed(2);
@@ -329,8 +321,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     $('final').hidden = true; $('card').hidden = false; showFinal(false);
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
     $('predict').hidden = !!r.motor; $('motor').hidden = !r.motor;
-    $('nameB').textContent = r.motor ? 'Motorboat' : 'Drifting boat';
-    if (r.motor) { $('v').value = 1; st.v = 1; $('vo').textContent = '1.0'; $('motorNote').innerHTML = 'Its reading is plotted on the right.'; $('go').disabled = false; }
+        if (r.motor) { $('v').value = 1; st.v = 1; $('vo').textContent = '1.0'; $('motorNote').innerHTML = 'The boat drifts with the river; its reading is plotted on the right.'; $('go').disabled = false; }
     else { choices($('chA'), 'pA'); choices($('chB'), 'pB'); $('go').disabled = true; }
     $('go').hidden = false; $('next').hidden = true;
     $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
@@ -367,7 +358,7 @@ button:focus-visible, .choice:focus-visible, input:focus-visible { outline: 3px 
     if (r.motor) {
       const err = Math.abs(st.v - r.vstar); pts = err < 0.051 ? 20 : err < 0.31 ? 10 : 0;
       const rate = -0.15 + 0.1 * st.v;
-      msg = (pts === 20 ? 'Steady. ' : pts ? 'Close: ' : 'Not steady: ') + 'at \\(v=' + st.v.toFixed(1) + '\\) the boat records \\(-0.15+0.1v=' + rate.toFixed(2) + '\\) per second. Steady needs \\(v=1.5\\).';
+      msg = (pts === 20 ? 'Steady: ' : pts ? 'Close: ' : 'Not steady: ') + 'at \\(u_0=' + st.v.toFixed(1) + '\\) the boat records \\(Dc/Dt=-0.15+0.1u_0=' + rate.toFixed(2) + '\\). Steady needs \\(u_0=1.5\\).';
     } else {
       const tA = classify(st.recA), tB = classify(st.recB);
       const okA = st.pA === tA, okB = st.pB === tB; pts = (okA ? 10 : 0) + (okB ? 10 : 0);
