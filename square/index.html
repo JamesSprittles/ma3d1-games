@@ -67,6 +67,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
 .result.no { color: var(--key); font-weight: 600; }
 .debrief { border-top: 1px solid var(--line); padding-top: 8px; font-size: 15.5px; display: flex; flex-direction: column; gap: 6px; }
 .debrief p { margin: 0; }
+.debrief p.tiny { font-size: 13.5px; color: var(--muted); }
 .debrief canvas { align-self: center; }
 table.cand { border-collapse: collapse; font-size: 15px; width: 100%; }
 table.cand th, table.cand td { padding: 3px 4px; text-align: center; border-bottom: 1px solid var(--line); }
@@ -91,7 +92,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
   <p class="brief" id="brief"></p>
 
   <div class="stage" id="stage">
-    <canvas id="cv" role="img" aria-label="A square fluid element deforming, with its diagonals drawn"></canvas>
+    <canvas id="cv" role="img" aria-label="A square fluid element deforming; the two edges from corner A are highlighted"></canvas>
     <div class="hint" id="hint"></div>
   </div>
 
@@ -124,29 +125,29 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
 
 <script>
 (function () {
-  const PI = Math.PI, T = 0.6, HALF = 0.5; // the element is followed for time T; half-side HALF in local units
+  const PI = Math.PI, T = 0.35, HALF = 0.5; // the element is followed for time T; half-side HALF in local units
   // Every candidate is a linear flow, so grad u is constant and exp(A t) is exact. A = [[du/dx, du/dy],[dv/dx, dv/dy]].
   const F = (tex, A) => ({ tex, A });
   const ROUNDS = [
     {
-      title: 'A rhombus', brief: 'Watch the square. The flow is one of the four below; its translation has been removed so you see only the deformation. Decide the sign of \\(\\omega\\) from the picture, then work out which flow does this.',
+      title: 'A rhombus', brief: 'Watch the two edges that start from the marked corner \\(A\\), one along \\(x\\) and one along \\(y\\): do they get longer or shorter, does the angle between them change, do they turn? Decide the sign of \\(\\omega\\), then work out which flow does this. Its translation has been removed.',
       ans: 0, cands: [F('(y,\\,x)', [[0, 1], [1, 0]]), F('(y,\\,0)', [[0, 1], [0, 0]]), F('(x,\\,-y)', [[1, 0], [0, -1]]), F('(x,\\,y)', [[1, 0], [0, 1]])],
-      debrief: ['Neither diagonal turns: they lie along the principal axes. The bottom edge turns anticlockwise and the left edge clockwise by equal amounts, so the average turning rate of two perpendicular material lines, which is \\(\\omega/2\\), is zero. The element is stretched along \\((1,1)\\) and squashed along \\((1,-1)\\) with its area fixed.', 'Only \\((y,x)\\) has all three: symmetric \\(\\nabla\\underline{u}\\) (so \\(\\underline{\\underline{r}}=0\\)), eigenvectors \\((1,\\pm1)\\), trace zero. \\((y,0)\\) has the same \\(\\underline{\\underline{e}}\\) but \\(\\omega=-1\\); \\((x,-y)\\) stretches along \\(x\\); \\((x,y)\\) grows.']
+      debrief: ['Neither edge lengthens at first (\\(e_{11}=e_{22}=0\\)) while the angle at \\(A\\) closes (\\(e_{12}>0\\)): a rhombus with its area fixed. The \\(x\\)-edge turns anticlockwise and the \\(y\\)-edge clockwise by equal amounts, so the average turning rate, which is \\(\\omega/2\\), is zero.', 'Only \\((y,x)\\) fits: \\(\\nabla\\underline{u}=\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\) is symmetric, so \\(\\underline{\\underline{r}}=0\\); the diagonal is zero and \\(e_{12}=1\\). \\((y,0)\\) has the same \\(\\underline{\\underline{e}}\\) but \\(\\omega=-1\\). \\((x,-y)\\) stretches the \\(x\\)-edge and shrinks the \\(y\\)-edge with the angle fixed. \\((x,y)\\) stretches both: \\(\\nabla\\cdot\\underline{u}=2\\).']
     },
     {
-      title: 'A rhombus that turns', brief: 'Same idea. Note which lines keep their direction.',
+      title: 'A rhombus that turns', brief: 'Same idea. Note which edge keeps its direction.',
       ans: 0, cands: [F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(y,\\,x)', [[0, 1], [1, 0]]), F('(-y,\\,0)', [[0, -1], [0, 0]])],
-      debrief: ['The bottom edge never turns; the left edge leans over clockwise at rate 1. The average turning rate of two perpendicular lines is \\(\\omega/2=-\\tfrac12\\), so \\(\\omega=-1\\): clockwise. The stretching is still along \\((1,1)\\), as in round 1.', 'Simple shear \\((y,0)\\): \\(\\underline{\\underline{e}}=\\tfrac12\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\), \\(\\omega=-1\\). \\((0,x)\\) has the same \\(\\underline{\\underline{e}}\\) but turns the other way (\\(\\omega=+1\\)); \\((-y,0)\\) turns anticlockwise and stretches along \\((1,-1)\\); \\((y,x)\\) does not turn at all.']
+      debrief: ['The \\(x\\)-edge never turns; the \\(y\\)-edge leans over clockwise at rate 1. Average turning rate \\(-\\tfrac12\\), so \\(\\omega=-1\\). The angle at \\(A\\) closes at rate \\(2e_{12}=1\\) and, at first, neither edge lengthens, as in round 1.', 'Simple shear \\((y,0)\\): \\(\\underline{\\underline{e}}=\\tfrac12\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\), \\(\\omega=-1\\). \\((0,x)\\) has the same \\(\\underline{\\underline{e}}\\) but \\(\\omega=+1\\): there the \\(y\\)-edge is fixed and the \\(x\\)-edge turns anticlockwise. \\((-y,0)\\) opens the angle (\\(e_{12}<0\\)) and has \\(\\omega=+1\\). \\((y,x)\\) does not turn at all.']
     },
     {
       title: 'Round and round', brief: 'Same idea. Is anything being deformed?',
       ans: 0, cands: [F('(-y,\\,x)', [[0, -1], [1, 0]]), F('(y,\\,-x)', [[0, 1], [-1, 0]]), F('(-y,\\,0)', [[0, -1], [0, 0]]), F('(-y,\\,x)/2 + (x,\\,-y)', [[1, -0.5], [0.5, -1]])],
-      debrief: ['Both diagonals turn anticlockwise at the same rate and the square stays a square: \\(\\underline{\\underline{e}}=0\\), \\(\\omega=+2\\). Solid-body rotation; no viscous stress despite the vorticity.', '\\((y,-x)\\) is the same rotation clockwise. \\((-y,0)\\) also has \\(\\omega=+1\\) but shears. The last candidate adds a strain \\((x,-y)\\) to a rotation \\((-y,x)/2\\): it turns anticlockwise <em>and</em> stretches along \\(x\\). You cannot read \\(\\omega\\) off the shape alone; you need how the lines turn.']
+      debrief: ['Both edges turn anticlockwise at the same rate; their lengths and the angle at \\(A\\) do not change: \\(\\underline{\\underline{e}}=0\\), \\(\\omega=+2\\). Solid-body rotation, so no viscous stress despite the vorticity.', '\\((y,-x)\\) is the same rotation clockwise. \\((-y,0)\\) has \\(\\omega=+1\\) but opens the angle at \\(A\\). The last candidate turns anticlockwise too (\\(\\omega=1\\)) but stretches the \\(x\\)-edge and shrinks the \\(y\\)-edge (\\(e_{11}=1\\), \\(e_{22}=-1\\)). Matching the rotation is not enough: check that nothing deforms.']
     },
     {
-      title: 'Work it out', brief: 'Harder: four flows built from \\(x\\pm y\\). Compute \\(\\underline{\\underline{e}}\\) and \\(\\omega\\) for each before you answer.', wide: true,
+      title: 'Work it out', brief: 'Harder: four flows built from \\(x\\pm y\\). Write down \\(\\nabla\\underline{u}\\), then \\(\\underline{\\underline{e}}\\) and \\(\\omega\\), for each before you answer.', wide: true,
       ans: 0, cands: [F('(x+y,\\,-x-y)', [[1, 1], [-1, -1]]), F('(x-y,\\,x+y)', [[1, -1], [1, 1]]), F('(x+y,\\,x-y)', [[1, 1], [1, -1]]), F('(x-y,\\,-x-y)', [[1, -1], [-1, -1]])],
-      debrief: ['The element is stretched along \\(x\\), squashed along \\(y\\), and turns clockwise: \\(\\underline{\\underline{e}}=\\begin{pmatrix}1&0\\\\0&-1\\end{pmatrix}\\), \\(\\omega=-2\\). That is \\((x+y,-x-y)\\): \\(\\nabla\\underline{u}=\\begin{pmatrix}1&1\\\\-1&-1\\end{pmatrix}\\), antisymmetric part \\(\\begin{pmatrix}0&1\\\\-1&0\\end{pmatrix}\\).', '\\((x-y,x+y)\\) has \\(\\underline{\\underline{e}}=\\underline{\\underline{I}}\\): isotropic expansion with \\(\\omega=+2\\), the area grows. \\((x+y,x-y)\\) and \\((x-y,-x-y)\\) are symmetric, so \\(\\omega=0\\); they stretch along axes at \\(\\pm\\pi/8\\) to \\(x\\), since \\(\\tan2\\theta=\\pm1\\).']
+      debrief: ['The \\(x\\)-edge lengthens, the \\(y\\)-edge shortens, the angle at \\(A\\) stays a right angle, and both edges turn clockwise: \\(e_{11}=1\\), \\(e_{22}=-1\\), \\(e_{12}=0\\), \\(\\omega=-2\\). That is \\((x+y,-x-y)\\): \\(\\nabla\\underline{u}=\\begin{pmatrix}1&1\\\\-1&-1\\end{pmatrix}\\), antisymmetric part \\(\\begin{pmatrix}0&1\\\\-1&0\\end{pmatrix}\\).', '\\((x-y,x+y)\\): \\(e_{11}=e_{22}=1\\), \\(\\omega=+2\\): both edges lengthen, the area grows, and it turns anticlockwise. \\((x+y,x-y)\\) and \\((x-y,-x-y)\\) are symmetric, so \\(\\omega=0\\), and they close (\\(e_{12}=1\\)) or open (\\(e_{12}=-1\\)) the angle at \\(A\\).']
     }
   ];
 
@@ -232,8 +233,9 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     c.setLineDash([3, 3]); c.strokeStyle = cMuted; c.lineWidth = 1; poly(c, CORNERS, X, Y, true); c.stroke(); c.setLineDash([]);
     c.fillStyle = cEl; c.globalAlpha = 0.22; poly(c, q, X, Y, true); c.fill(); c.globalAlpha = 1;
     c.strokeStyle = cEl; c.lineWidth = lw; c.lineJoin = 'round'; poly(c, q, X, Y, true); c.stroke();
-    c.strokeStyle = cDiag; c.lineWidth = Math.max(1.2, lw * 0.6); c.beginPath(); c.moveTo(X(q[0][0]), Y(q[0][1])); c.lineTo(X(q[2][0]), Y(q[2][1])); c.moveTo(X(q[1][0]), Y(q[1][1])); c.lineTo(X(q[3][0]), Y(q[3][1])); c.stroke();
+    c.strokeStyle = cDiag; c.lineWidth = lw * 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(X(q[1][0]), Y(q[1][1])); c.lineTo(X(q[0][0]), Y(q[0][1])); c.lineTo(X(q[3][0]), Y(q[3][1])); c.stroke();
     c.fillStyle = cInk; c.beginPath(); c.arc(X(q[0][0]), Y(q[0][1]), Math.max(3, lw * 1.4), 0, 2 * PI); c.fill();
+    if (lw > 2.2) { c.font = '600 14px ' + css('--font-body'); c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText('A', X(q[0][0]) - 6, Y(q[0][1]) + 2); c.textBaseline = 'alphabetic'; }
   }
   function draw() {
     const r = ROUNDS[R], A = trueA(), cLine = css('--line'), cFlow = css('--flow');
@@ -246,7 +248,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
       pts.forEach(([x, y, v, m]) => arrow(ctx, sx(x), sy(y), v[0], v[1], cell * 0.8 * m / umax, cFlow)); ctx.globalAlpha = 1;
     }
     element(ctx, A, st.t, sx, sy, 2.5);
-    $('hint').textContent = (st.phase === 'done' ? 'arrows: the flow relative to the centre · ' : '') + 't = ' + st.t.toFixed(2);
+    $('hint').textContent = (st.phase === 'done' ? 'arrows: the flow relative to the centre · ' : 'green: the edges from A · ') + 't = ' + st.t.toFixed(2);
   }
   // the loop: deform over 2 s, hold 1 s, reset, repeat
   function loop(now) {
@@ -304,14 +306,13 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     $('result').innerHTML = (okW && okF ? 'Both right. ' : okW ? 'Right about \\(\\omega\\), wrong flow. ' : okF ? 'Right flow, wrong \\(\\omega\\). ' : 'Neither this time. ') + '\\(\\omega=' + w + '\\). +' + pts;
     $('result').className = 'result ' + (pts ? 'ok' : 'no');
     // candidate table
-    const rows = r.cands.map((c, k) => { const E = sym(c.A), th = principal(c.A), tr = (E[0][0] + E[1][1]);
-      const dir = th === null ? 'all directions' : '\\(' + (Math.abs(th) < 1e-9 ? '0' : Math.abs(Math.abs(th) - PI / 2) < 1e-9 ? '\\pi/2' : Math.abs(Math.abs(th) - PI / 4) < 1e-9 ? (th > 0 ? '' : '-') + '\\pi/4' : (th > 0 ? '' : '-') + '\\pi/8') + '\\)';
-      const lam = Math.max(...eig(E)).toFixed(2).replace(/\.?0+$/, '');
-      return '<tr' + (k === r.ans ? ' class="is"' : '') + '><td>\\(' + c.tex + '\\)</td><td>' + omega(c.A) + '</td><td>' + tr + '</td><td>' + (Math.abs(Math.max(...eig(E))) < 1e-9 ? '—' : dir + ', rate ' + lam) + '</td></tr>'; }).join('');
+    const fmt = v => (Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : (v < 0 ? '−' : '') + '½');
+    const rows = r.cands.map((c, k) => { const E = sym(c.A);
+      return '<tr' + (k === r.ans ? ' class="is"' : '') + '><td>\\(' + c.tex + '\\)</td><td>' + fmt(omega(c.A)) + '</td><td>' + fmt(E[0][0]) + '</td><td>' + fmt(E[1][1]) + '</td><td>' + fmt(E[0][1]) + '</td><td>' + fmt(E[0][0] + E[1][1]) + '</td></tr>'; }).join('');
     const db = $('debrief');
     db.innerHTML = '<p>Split the true \\(\\nabla\\underline{u}=\\underline{\\underline{e}}+\\underline{\\underline{r}}\\) and apply each part on its own:</p><canvas id="dc" aria-label="The element under strain only, rotation only, and both"></canvas>'
-      + '<table class="cand" aria-label="The four candidates compared"><tr><th>flow</th><th>\\(\\omega\\)</th><th>\\(\\nabla\\!\\cdot\\!\\underline{u}\\)</th><th>stretches fastest along</th></tr>' + rows + '</table>'
-      + r.debrief.map(s => '<p>' + s + '</p>').join('');
+      + '<table class="cand" aria-label="The four candidates compared"><tr><th>flow</th><th>\\(\\omega\\)</th><th>\\(e_{11}\\)</th><th>\\(e_{22}\\)</th><th>\\(e_{12}\\)</th><th>\\(\\nabla\\!\\cdot\\!\\underline{u}\\)</th></tr>' + rows + '</table>'
+      + '<p class="tiny">\\(e_{11},e_{22}\\): rate of extension of the \\(x\\)- and \\(y\\)-edges; \\(2e_{12}\\): rate at which the angle at \\(A\\) closes; \\(\\omega/2\\): average turning rate of the two edges.</p>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
     db.hidden = false; drawDecomp($('dc'), A);
     $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
     renderDots(); typeset([$('result'), db]); draw();
@@ -333,7 +334,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
   new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   st = fresh(); load(0);
   if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
-  window.__sq = { get st() { return st; }, load, ROUNDS, expm, omega, sym, principal };
+  window.__sq = { get st() { return st; }, load, ROUNDS, expm, omega, sym };
 })();
 </script>
 </body></html>
