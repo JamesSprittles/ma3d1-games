@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squash the Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. Round card, flow canvas with the square element, a 2x2 entry grid for grad u with a live preview, then the reveal. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --elem: #C24A00; --key: #C0392B; --good: #0B7A55; --wall: #8A6D3B;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --elem: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --elem: #FF9A5C; --key: #F0756A; --good: #4CC79A; --wall: #B8975E; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: linear-gradient(90deg, var(--good) 50%, transparent 50%); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
+.stage { position: relative; align-self: center; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); touch-action: none; }
+canvas { display: block; }
+.hint { position: absolute; left: 8px; top: 6px; font-size: 14px; color: var(--muted); pointer-events: none; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.q { margin: 0; font-weight: 600; }
+.entry { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px 8px; align-items: center; }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1.5px solid var(--line); border-radius: 8px; padding: 4px 4px 6px; }
+.cell.right { border-color: var(--good); }
+.cell.wrong { border-color: var(--key); }
+.cell .lab { font-size: 15px; }
+.step { display: flex; align-items: center; gap: 4px; }
+.step button { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font: 700 20px/1 var(--font-body); cursor: pointer; }
+.step button:disabled { opacity: .35; cursor: default; }
+.step output { min-width: 30px; text-align: center; font: 700 20px/1 var(--font-body); font-variant-numeric: tabular-nums; }
+.cell .truth { font-size: 13.5px; color: var(--muted); min-height: 1.2em; }
+.preview { grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 13px; color: var(--muted); }
+.preview canvas { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 13px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; }
+.result:empty { display: none; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 8px; font-size: 15.5px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+.debrief canvas { align-self: center; }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.spin { display: inline-block; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .emo.spin { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13px; color: var(--muted); text-align: center; margin: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Flow field with a small square fluid element"></canvas>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <section class="card" id="card">
+    <p class="q">At the square, \(\nabla\underline{u}=\partial u_i/\partial x_j\) is:</p>
+    <div class="entry" id="entry">
+      <div class="cell" data-k="0"><span class="lab">\(\partial u/\partial x\)</span><div class="step"><button type="button" data-d="-1" aria-label="decrease">−</button><output>0</output><button type="button" data-d="1" aria-label="increase">+</button></div><span class="truth"></span></div>
+      <div class="cell" data-k="1"><span class="lab">\(\partial u/\partial y\)</span><div class="step"><button type="button" data-d="-1" aria-label="decrease">−</button><output>0</output><button type="button" data-d="1" aria-label="increase">+</button></div><span class="truth"></span></div>
+      <div class="preview"><canvas id="pv" width="104" height="104" aria-label="Preview of your predicted deformation"></canvas>your prediction</div>
+      <div class="cell" data-k="2"><span class="lab">\(\partial v/\partial x\)</span><div class="step"><button type="button" data-d="-1" aria-label="decrease">−</button><output>0</output><button type="button" data-d="1" aria-label="increase">+</button></div><span class="truth"></span></div>
+      <div class="cell" data-k="3"><span class="lab">\(\partial v/\partial y\)</span><div class="step"><button type="button" data-d="-1" aria-label="decrease">−</button><output>0</output><button type="button" data-d="1" aria-label="increase">+</button></div><span class="truth"></span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="go">Deform it</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 · Chapter 2, deformation of fluid elements</p>
+</div>
+
+<script>
+(function () {
+  const PI = Math.PI, A0 = 0.22; const A_HALF_OF = r => r.a || A0; // half-side of the square element, in flow units
+  // A = grad u at the point, as [[du/dx, du/dy],[dv/dx, dv/dy]]. T: time the element is followed for.
+  const ROUNDS = [
+    {
+      title: 'Simple shear', brief: 'The flow is \\(\\underline{u}=(y,\\,0)\\). The square sits at \\((0,\\,1)\\). Fill in \\(\\nabla\\underline{u}\\) there, watch the preview, then deform it.',
+      dom: { x0: -1.4, x1: 2.0, y0: -0.5, y1: 2.0 }, pos: { x: 0, y: 1 }, T: 0.9,
+      vel: (x, y) => [y, 0], A: [[0, 1], [0, 0]],
+      debrief: ['\\(\\nabla\\underline{u}=\\begin{pmatrix}0&1\\\\0&0\\end{pmatrix}\\) splits into strain \\(\\underline{\\underline{e}}=\\tfrac12\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\) and rotation \\(\\underline{\\underline{r}}=\\tfrac12\\begin{pmatrix}0&1\\\\-1&0\\end{pmatrix}\\): half of simple shear is deformation, half is clockwise rotation (\\(\\omega=-1\\)).', 'The strain stretches along the diagonal \\((1,1)\\) at rate \\(\\tfrac12\\) and squashes along \\((1,-1)\\); the top and bottom edges keep their length. The angle at the corner closes at rate \\(2e_{12}=1\\).']
+    },
+    {
+      title: 'Looks like shear', brief: 'The flow is \\(\\underline{u}=(y,\\,x)\\). The square sits at \\((0.8,\\,0.8)\\). Fill in \\(\\nabla\\underline{u}\\) there.',
+      dom: { x0: -0.4, x1: 2.6, y0: -0.4, y1: 2.6 }, pos: { x: 0.8, y: 0.8 }, T: 0.7,
+      vel: (x, y) => [y, x], A: [[0, 1], [1, 0]],
+      debrief: ['\\(\\nabla\\underline{u}=\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\) is already symmetric: \\(\\underline{\\underline{e}}=\\nabla\\underline{u}\\), \\(\\underline{\\underline{r}}=0\\), \\(\\omega=0\\). Compare round 1: the same \\(\\underline{\\underline{e}}\\), so the same deformation, but now no rotation.', 'Eigenvectors \\((1,1)\\) and \\((1,-1)\\) with eigenvalues \\(\\pm1\\): this is the extensional flow \\((x,-y)\\) turned through \\(\\pi/4\\). Look at the preview: the square becomes a rhombus with its long diagonal along \\(y=x\\).']
+    },
+    {
+      title: 'Rigid rotation', brief: 'The flow is \\(\\underline{u}=(-y,\\,x)\\). The square sits at \\((1,\\,0)\\). Fill in \\(\\nabla\\underline{u}\\) there.',
+      dom: { x0: -1.6, x1: 1.6, y0: -1.6, y1: 1.6 }, pos: { x: 1, y: 0 }, T: 1.0,
+      vel: (x, y) => [-y, x], A: [[0, -1], [1, 0]],
+      debrief: ['\\(\\nabla\\underline{u}=\\begin{pmatrix}0&-1\\\\1&0\\end{pmatrix}\\) is antisymmetric: \\(\\underline{\\underline{e}}=0\\) and \\(\\underline{\\underline{r}}=\\nabla\\underline{u}\\). No deformation at all; the square turns like a solid body at \\(\\Omega=\\omega/2=1\\).', 'This is why vorticity alone says nothing about friction: viscous stress comes from \\(\\underline{\\underline{e}}\\), and here it is zero even though \\(\\omega=2\\) everywhere.']
+    },
+    {
+      title: 'Work it out', brief: 'The flow is \\(\\underline{u}=(x^2,\\,-2xy)\\). The square sits at \\((1,\\,0.5)\\). Differentiate, then fill in \\(\\nabla\\underline{u}\\) there.',
+      dom: { x0: -0.2, x1: 2.4, y0: -1.0, y1: 1.4 }, pos: { x: 1, y: 0.5 }, T: 0.25, a: 0.14,
+      vel: (x, y) => [x * x, -2 * x * y], A: [[2, 0], [-1, -2]],
+      debrief: ['\\(\\partial u/\\partial x=2x\\), \\(\\partial u/\\partial y=0\\), \\(\\partial v/\\partial x=-2y\\), \\(\\partial v/\\partial y=-2x\\). At \\((1,0.5)\\): \\(\\nabla\\underline{u}=\\begin{pmatrix}2&0\\\\-1&-2\\end{pmatrix}\\), so \\(\\underline{\\underline{e}}=\\begin{pmatrix}2&-\\tfrac12\\\\-\\tfrac12&-2\\end{pmatrix}\\), \\(\\underline{\\underline{r}}=\\begin{pmatrix}0&\\tfrac12\\\\-\\tfrac12&0\\end{pmatrix}\\), \\(\\omega=-1\\).', 'Trace \\(e_{11}+e_{22}=\\nabla\\cdot\\underline{u}=0\\): stretched in \\(x\\) exactly as fast as it is squashed in \\(y\\), so the area is conserved. The off-diagonal \\(-\\tfrac12\\) adds a little shear, and the element turns slowly clockwise as it goes.']
+    },
+    {
+      title: 'Not incompressible', brief: 'The flow is \\(\\underline{u}=(x,\\,0)\\). The square sits at \\((1,\\,0.5)\\). Fill in \\(\\nabla\\underline{u}\\) there, and think about its area.',
+      dom: { x0: -0.3, x1: 2.9, y0: -0.6, y1: 1.6 }, pos: { x: 1, y: 0.5 }, T: 0.7,
+      vel: (x, y) => [x, 0], A: [[1, 0], [0, 0]],
+      debrief: ['\\(\\nabla\\underline{u}=\\begin{pmatrix}1&0\\\\0&0\\end{pmatrix}=\\underline{\\underline{e}}\\): extension in \\(x\\) at rate \\(e_{11}=1\\), nothing in \\(y\\), no rotation.', '\\(\\nabla\\cdot\\underline{u}=e_{11}+e_{22}=1\\neq0\\): the area grows at rate 1 (it has doubled by \\(t=\\ln2\\)). An incompressible fluid cannot do this: extension in one direction must be paid for by contraction in another, as in round 4.']
+    },
+    {
+      title: 'A point vortex', brief: 'The flow is \\(\\underline{u}=(-y,\\,x)/r^2\\) with \\(r^2=x^2+y^2\\). The square sits at \\((1,\\,0)\\). Chain rule, then fill in \\(\\nabla\\underline{u}\\) there.',
+      dom: { x0: -1.6, x1: 1.6, y0: -1.6, y1: 1.6 }, pos: { x: 1, y: 0 }, T: 0.35, a: 0.14,
+      vel: (x, y) => { const r2 = x * x + y * y; return [-y / r2, x / r2]; }, A: [[0, -1], [-1, 0]],
+      debrief: ['With \\(u=-y/r^2\\), \\(v=x/r^2\\): \\(\\partial u/\\partial x=2xy/r^4=0\\), \\(\\partial u/\\partial y=-1/r^2+2y^2/r^4=-1\\), \\(\\partial v/\\partial x=1/r^2-2x^2/r^4=-1\\), \\(\\partial v/\\partial y=-2xy/r^4=0\\) at \\((1,0)\\). Symmetric, so \\(\\underline{\\underline{r}}=0\\) and \\(\\omega=0\\): the element deforms but does not spin, even though it is carried round the vortex.', 'Stretched along \\((1,-1)\\) and squashed along \\((1,1)\\), each at rate 1: the inner edge is in faster fluid and runs ahead. Compare round 3: circular streamlines in both, but a solid-body rotation has \\(\\underline{\\underline{e}}=0\\), the vortex has \\(\\underline{\\underline{r}}=0\\).']
+    }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), pv = $('pv'), pctx = pv.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let R = 0, st, results = ROUNDS.map(() => null);
+  $('max').textContent = ROUNDS.length * 10;
+
+  function fresh() { const r = ROUNDS[R]; return { phase: 'predict', guess: [0, 0, 0, 0], t: 0, pts: squarePts(r.pos), c: { ...r.pos }, trail: [] }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+  // boundary of the square: 6 points per side, anticlockwise from the bottom-left corner
+  function squarePts(p, a) {
+    const n = 6, out = []; a = a || A_HALF_OF(ROUNDS[R]);
+    const corners = [[-a, -a], [a, -a], [a, a], [-a, a]];
+    for (let s = 0; s < 4; s++) { const [x0, y0] = corners[s], [x1, y1] = corners[(s + 1) % 4]; for (let k = 0; k < n; k++) out.push([p.x + x0 + (x1 - x0) * k / n, p.y + y0 + (y1 - y0) * k / n]); }
+    return out;
+  }
+  // matrix exponential exp(A t) for a 2x2 A, by scaling and squaring of a second-order step
+  function expm(A, t) {
+    let M = [[1, 0], [0, 1]]; const n = 64, h = t / n;
+    const S = [[1 + A[0][0] * h + (A[0][0] * A[0][0] + A[0][1] * A[1][0]) * h * h / 2, A[0][1] * h + (A[0][0] * A[0][1] + A[0][1] * A[1][1]) * h * h / 2],
+               [A[1][0] * h + (A[1][0] * A[0][0] + A[1][1] * A[1][0]) * h * h / 2, 1 + A[1][1] * h + (A[1][0] * A[0][1] + A[1][1] * A[1][1]) * h * h / 2]];
+    for (let k = 0; k < n; k++) M = mul(S, M);
+    return M;
+  }
+  const mul = (P, Q) => [[P[0][0] * Q[0][0] + P[0][1] * Q[1][0], P[0][0] * Q[0][1] + P[0][1] * Q[1][1]], [P[1][0] * Q[0][0] + P[1][1] * Q[1][0], P[1][0] * Q[0][1] + P[1][1] * Q[1][1]]];
+  const apply = (M, v) => [M[0][0] * v[0] + M[0][1] * v[1], M[1][0] * v[0] + M[1][1] * v[1]];
+  const guessA = () => [[st.guess[0], st.guess[1]], [st.guess[2], st.guess[3]]];
+
+  let W = 300, H = 300, scale = 1;
+  function size() {
+    const d = ROUNDS[R].dom, aspect = (d.x1 - d.x0) / (d.y1 - d.y0);
+    const maxW = Math.min(stage.parentElement.clientWidth - 24, 528), maxH = Math.max(200, window.innerHeight * 0.33);
+    W = maxW; H = W / aspect; if (H > maxH) { H = maxH; W = H * aspect; }
+    W = Math.round(W); H = Math.round(H);
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); scale = W / (d.x1 - d.x0);
+    pv.width = 104 * dpr; pv.height = 104 * dpr; pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(); drawPreview();
+  }
+  const sx = x => (x - ROUNDS[R].dom.x0) * scale, sy = y => (ROUNDS[R].dom.y1 - y) * scale;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // ---------- sound (synthesised, no files) ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      wake() { ctxA(); },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      half() { tone(523, 0, 0.15, 'triangle', 0.15); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      squish() { tone(220, 0, 0.5, 'sine', 0.12, 110); },
+      tick() { tone(1400, 0, 0.03, 'square', 0.05); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn');
+  const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function arrow(c, x, y, ux, uy, len, col) {
+    const ang = Math.atan2(-uy, ux), ex = x + len * Math.cos(ang), ey = y + len * Math.sin(ang);
+    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.3;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(ex, ey); c.stroke();
+    const h = Math.min(6, len * 0.45);
+    c.beginPath(); c.moveTo(ex, ey);
+    c.lineTo(ex - h * Math.cos(ang - 0.45), ey - h * Math.sin(ang - 0.45)); c.lineTo(ex - h * Math.cos(ang + 0.45), ey - h * Math.sin(ang + 0.45));
+    c.closePath(); c.fill();
+  }
+  function poly(c, pts, toX, toY, close) { c.beginPath(); pts.forEach((q, i) => i ? c.lineTo(toX(q[0]), toY(q[1])) : c.moveTo(toX(q[0]), toY(q[1]))); if (close) c.closePath(); }
+  // the element as predicted by a constant grad-u matrix M = exp(A t), centred at c
+  function linearPts(M, c) { return squarePts({ x: 0, y: 0 }).map(q => { const v = apply(M, q); return [c.x + v[0], c.y + v[1]]; }); }
+
+  function draw() {
+    const r = ROUNDS[R], d = r.dom, cFlow = css('--flow'), cEl = css('--elem'), cLine = css('--line'), cInk = css('--ink'), cMuted = css('--muted');
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = cLine; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx(d.x0), sy(0)); ctx.lineTo(sx(d.x1), sy(0)); ctx.moveTo(sx(0), sy(d.y0)); ctx.lineTo(sx(0), sy(d.y1)); ctx.stroke();
+    // arrows
+    const n = 8, cell = Math.min(W, H) / n; let umax = 0; const pts = [];
+    for (let i = 0; i < Math.ceil(W / cell); i++) for (let j = 0; j < Math.ceil(H / cell); j++) {
+      const x = d.x0 + (i + 0.5) * cell / scale, y = d.y1 - (j + 0.5) * cell / scale;
+      const v = r.vel(x, y), m = Math.hypot(v[0], v[1]);
+      if (m > 1e-9 && m < 6) { pts.push([x, y, v, m]); umax = Math.max(umax, Math.min(m, 2.5)); }
+    }
+    ctx.globalAlpha = 0.4; pts.forEach(([x, y, v, m]) => arrow(ctx, sx(x), sy(y), v[0], v[1], cell * 0.7 * Math.min(m, 2.5) / umax, cFlow)); ctx.globalAlpha = 1;
+    // ghost of the starting square
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = cMuted; ctx.lineWidth = 1.2; poly(ctx, squarePts(r.pos), sx, sy, true); ctx.stroke(); ctx.setLineDash([]);
+    if (st.trail.length > 1) { ctx.strokeStyle = cEl; ctx.globalAlpha = 0.35; ctx.lineWidth = 2; poly(ctx, st.trail, sx, sy, false); ctx.stroke(); ctx.globalAlpha = 1; }
+    // the student's prediction, around the true centre, at the same time
+    if (st.phase !== 'predict') {
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = cFlow; ctx.lineWidth = 2; poly(ctx, linearPts(expm(guessA(), st.t), st.c), sx, sy, true); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // the real element
+    ctx.fillStyle = cEl; ctx.globalAlpha = 0.25; poly(ctx, st.pts, sx, sy, true); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = cEl; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; poly(ctx, st.pts, sx, sy, true); ctx.stroke();
+    // mark one corner so rotation is visible
+    ctx.fillStyle = cInk; ctx.beginPath(); ctx.arc(sx(st.pts[0][0]), sy(st.pts[0][1]), 3.5, 0, 2 * PI); ctx.fill();
+    $('hint').textContent = st.phase === 'predict' ? 'orange: the element · dot: one corner' : (st.phase === 'run' ? 't = ' + st.t.toFixed(2) + ' · dashed blue: your prediction' : 't = ' + st.t.toFixed(2) + ' · dashed blue: your prediction');
+  }
+  function drawPreview() {
+    const r = ROUNDS[R], cEl = css('--elem'), cFlow = css('--flow'), cMuted = css('--muted'), cInk = css('--ink');
+    pctx.clearRect(0, 0, 104, 104);
+    const s = 104 / (2 * A_HALF_OF(r)) * 0.33, X = x => 52 + x * s, Y = y => 52 - y * s;
+    pctx.setLineDash([3, 3]); pctx.strokeStyle = cMuted; pctx.lineWidth = 1; poly(pctx, squarePts({ x: 0, y: 0 }), X, Y, true); pctx.stroke(); pctx.setLineDash([]);
+    const M = expm(guessA(), r.T), q = linearPts(M, { x: 0, y: 0 });
+    pctx.fillStyle = cFlow; pctx.globalAlpha = 0.18; poly(pctx, q, X, Y, true); pctx.fill(); pctx.globalAlpha = 1;
+    pctx.strokeStyle = cFlow; pctx.lineWidth = 2; pctx.lineJoin = 'round'; poly(pctx, q, X, Y, true); pctx.stroke();
+    pctx.fillStyle = cInk; pctx.beginPath(); pctx.arc(X(q[0][0]), Y(q[0][1]), 3, 0, 2 * PI); pctx.fill();
+  }
+  // debrief: strain only, rotation only, both
+  function drawDecomp(canvas, A, T) {
+    const c = canvas.getContext('2d'), dpr = window.devicePixelRatio || 1, Wd = 300, Hd = 112;
+    canvas.width = Wd * dpr; canvas.height = Hd * dpr; canvas.style.width = Wd + 'px'; canvas.style.height = Hd + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const E = [[A[0][0], (A[0][1] + A[1][0]) / 2], [(A[0][1] + A[1][0]) / 2, A[1][1]]], Rr = [[0, (A[0][1] - A[1][0]) / 2], [(A[1][0] - A[0][1]) / 2, 0]];
+    const cEl = css('--elem'), cMuted = css('--muted'), cInk = css('--ink'), s = 100 / (2 * A_HALF_OF(ROUNDS[R])) * 0.3;
+    [[E, 'strain only'], [Rr, 'rotation only'], [A, 'both']].forEach(([M, lab], k) => {
+      const cx = 50 + k * 100, X = x => cx + x * s, Y = y => 50 - y * s;
+      c.setLineDash([3, 3]); c.strokeStyle = cMuted; c.lineWidth = 1; poly(c, squarePts({ x: 0, y: 0 }), X, Y, true); c.stroke(); c.setLineDash([]);
+      const q = linearPts(expm(M, T), { x: 0, y: 0 });
+      c.fillStyle = cEl; c.globalAlpha = 0.22; poly(c, q, X, Y, true); c.fill(); c.globalAlpha = 1;
+      c.strokeStyle = cEl; c.lineWidth = 2; c.lineJoin = 'round'; poly(c, q, X, Y, true); c.stroke();
+      c.fillStyle = cInk; c.beginPath(); c.arc(X(q[0][0]), Y(q[0][1]), 3, 0, 2 * PI); c.fill();
+      c.fillStyle = cMuted; c.font = '600 13px ' + css('--font-body'); c.textAlign = 'center'; c.fillText(lab, cx, Hd - 4);
+    });
+  }
+
+  // ---------- UI ----------
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] === 10 ? 'right' : results[i] === 5 ? 'half' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s || 0), 0);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '#brief']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function paintEntry() { document.querySelectorAll('.cell').forEach(c => { const k = +c.dataset.k; c.querySelector('output').textContent = st.guess[k]; c.querySelectorAll('button').forEach(b => { b.disabled = st.phase !== 'predict' || (b.dataset.d === '-1' ? st.guess[k] <= -2 : st.guess[k] >= 2); }); }); }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
+    document.querySelectorAll('.cell').forEach(c => { c.className = 'cell'; c.querySelector('.truth').textContent = ''; });
+    paintEntry();
+    $('go').disabled = false; $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    renderDots(); size(); typeset([$('brief')]);
+  }
+  document.querySelectorAll('.cell button').forEach(b => b.addEventListener('click', () => {
+    if (st.phase !== 'predict') return;
+    const k = +b.closest('.cell').dataset.k; st.guess[k] = Math.max(-2, Math.min(2, st.guess[k] + +b.dataset.d));
+    snd.tick(); paintEntry(); drawPreview();
+  }));
+
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict') return;
+    const r = ROUNDS[R]; st.phase = 'run'; st.t = 0; st.pts = squarePts(r.pos); st.c = { ...r.pos }; st.trail = [[r.pos.x, r.pos.y]];
+    $('go').disabled = true; paintEntry(); snd.wake(); snd.squish();
+    let last = performance.now();
+    function step(now) {
+      const real = Math.min(0.05, (now - last) / 1000); last = now;
+      const dt = reduceMotion ? r.T : Math.min(real * 0.55, r.T - st.t), sub = Math.max(1, Math.ceil(dt / 0.004)), h = dt / sub;
+      for (let k = 0; k < sub; k++) {
+        const rk = ([x, y]) => { const f = r.vel; const k1 = f(x, y), k2 = f(x + h / 2 * k1[0], y + h / 2 * k1[1]), k3 = f(x + h / 2 * k2[0], y + h / 2 * k2[1]), k4 = f(x + h * k3[0], y + h * k3[1]); return [x + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), y + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])]; };
+        st.pts = st.pts.map(rk); const cc = rk([st.c.x, st.c.y]); st.c = { x: cc[0], y: cc[1] }; st.t += h;
+      }
+      st.trail.push([st.c.x, st.c.y]); draw();
+      if (st.t < r.T - 1e-9) requestAnimationFrame(step); else finish();
+    }
+    requestAnimationFrame(step);
+  });
+
+  function finish() {
+    st.phase = 'done'; const r = ROUNDS[R], truth = [r.A[0][0], r.A[0][1], r.A[1][0], r.A[1][1]];
+    let nOk = 0;
+    document.querySelectorAll('.cell').forEach(c => { const k = +c.dataset.k, ok = st.guess[k] === truth[k]; if (ok) nOk++; c.classList.add(ok ? 'right' : 'wrong'); c.querySelector('.truth').textContent = ok ? '✓' : 'should be ' + truth[k]; });
+    const pts = nOk === 4 ? 10 : nOk === 3 ? 5 : 0; results[R] = pts;
+    if (pts === 10) snd.ok(); else if (pts === 5) snd.half(); else snd.no();
+    const A = r.A, w = A[1][0] - A[0][1], div = A[0][0] + A[1][1];
+    $('result').innerHTML = (pts === 10 ? 'All four right. ' : pts === 5 ? 'Three of four. ' : nOk + ' of four. ') + '\\(\\omega=' + w + '\\), \\(\\nabla\\cdot\\underline{u}=' + div + '\\). +' + pts;
+    $('result').className = 'result ' + (pts ? 'ok' : 'no');
+    const db = $('debrief'); db.innerHTML = '<p>Split \\(\\nabla\\underline{u}=\\underline{\\underline{e}}+\\underline{\\underline{r}}\\) and apply each part on its own for the same time:</p><canvas id="dc" aria-label="The element under strain only, rotation only, and both"></canvas>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
+    db.hidden = false; drawDecomp($('dc'), r.A, r.T);
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([$('result'), db]);
+  }
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else {
+      const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '🧊' : fr >= 0.7 ? '🫠' : fr >= 0.4 ? '🧽' : '🫨'; $('emo').className = 'emo' + (fr >= 0.7 ? ' spin' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot;
+    }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { draw(); drawPreview(); });
+  new MutationObserver(() => { draw(); drawPreview(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+  window.__sq = { get st() { return st; }, load, ROUNDS, expm };
+})();
+</script>
+</body></html>
