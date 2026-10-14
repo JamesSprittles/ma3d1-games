@@ -42,6 +42,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
 h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
 .brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
+.key { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
 .stage { position: relative; align-self: center; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); touch-action: none; }
 canvas { display: block; }
 .hint { position: absolute; left: 8px; top: 6px; font-size: 14px; color: var(--muted); pointer-events: none; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 4px; }
@@ -70,7 +71,8 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
 .debrief p.tiny { font-size: 13.5px; color: var(--muted); }
 .debrief canvas { align-self: center; }
 table.cand { border-collapse: collapse; font-size: 15px; width: 100%; }
-table.cand th, table.cand td { padding: 3px 4px; text-align: center; border-bottom: 1px solid var(--line); }
+table.cand th, table.cand td { padding: 3px 3px; text-align: center; border-bottom: 1px solid var(--line); }
+table.cand th { font-size: 13px; line-height: 1.2; }
 table.cand th { font-weight: 600; color: var(--muted); }
 table.cand tr.is td { font-weight: 700; color: var(--good); }
 .final { text-align: center; gap: 14px; padding-block: 22px; }
@@ -95,6 +97,8 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     <canvas id="cv" role="img" aria-label="A square fluid element deforming; the two edges from corner A are highlighted"></canvas>
     <div class="hint" id="hint"></div>
   </div>
+
+  <p class="key" id="key">\(B\) moves right at \(\partial u/\partial x\), up at \(\partial v/\partial x\). \(C\) moves right at \(\partial u/\partial y\), up at \(\partial v/\partial y\). \(\omega=\partial v/\partial x-\partial u/\partial y\).</p>
 
   <section class="card" id="card">
     <p class="q">From the picture, the vorticity \(\omega\) here is…</p>
@@ -130,19 +134,19 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
   const F = (tex, A) => ({ tex, A });
   const ROUNDS = [
     {
-      title: 'A rhombus', brief: 'Watch the two edges that start from the marked corner \\(A\\), one along \\(x\\) and one along \\(y\\): do they get longer or shorter, does the angle between them change, do they turn? Decide the sign of \\(\\omega\\), then work out which flow does this. Its translation has been removed.',
-      ans: 0, cands: [F('(y,\\,x)', [[0, 1], [1, 0]]), F('(y,\\,0)', [[0, 1], [0, 0]]), F('(x,\\,-y)', [[1, 0], [0, -1]]), F('(x,\\,y)', [[1, 0], [0, 1]])],
-      debrief: ['Neither edge lengthens at first (\\(e_{11}=e_{22}=0\\)) while the angle at \\(A\\) closes (\\(e_{12}>0\\)): a rhombus with its area fixed. The \\(x\\)-edge turns anticlockwise and the \\(y\\)-edge clockwise by equal amounts, so the average turning rate, which is \\(\\omega/2\\), is zero.', 'Only \\((y,x)\\) fits: \\(\\nabla\\underline{u}=\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\) is symmetric, so \\(\\underline{\\underline{r}}=0\\); the diagonal is zero and \\(e_{12}=1\\). \\((y,0)\\) has the same \\(\\underline{\\underline{e}}\\) but \\(\\omega=-1\\). \\((x,-y)\\) stretches the \\(x\\)-edge and shrinks the \\(y\\)-edge with the angle fixed. \\((x,y)\\) stretches both: \\(\\nabla\\cdot\\underline{u}=2\\).']
+      title: 'Watch B and C', brief: 'The square\'s corner \\(A\\) is held fixed (translation removed). Relative to \\(A\\), corner \\(B\\) moves at \\((\\partial u/\\partial x,\\ \\partial v/\\partial x)\\) and corner \\(C\\) at \\((\\partial u/\\partial y,\\ \\partial v/\\partial y)\\); the blue arrows show these. Read off the signs, then \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y\\).',
+      arrows: true, ans: 0, cands: [F('(x,\\,-y)', [[1, 0], [0, -1]]), F('(-x,\\,y)', [[-1, 0], [0, 1]]), F('(x,\\,y)', [[1, 0], [0, 1]])],
+      debrief: ['\\(B\\) moves right, so \\(\\partial u/\\partial x>0\\); \\(C\\) moves down, so \\(\\partial v/\\partial y<0\\). Neither moves sideways: \\(\\partial v/\\partial x=\\partial u/\\partial y=0\\), so \\(\\omega=0\\) and the angle at \\(A\\) stays a right angle. Only the edge lengths change (\\(e_{11}=1\\), \\(e_{22}=-1\\)), and \\(\\nabla\\cdot\\underline{u}=0\\) keeps the area fixed.', '\\((-x,y)\\) would send \\(B\\) left and \\(C\\) up. \\((x,y)\\) sends \\(B\\) right but \\(C\\) up: both edges lengthen and the area grows, \\(\\nabla\\cdot\\underline{u}=2\\).']
     },
     {
-      title: 'A rhombus that turns', brief: 'Same idea. Note which edge keeps its direction.',
-      ans: 0, cands: [F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(y,\\,x)', [[0, 1], [1, 0]]), F('(-y,\\,0)', [[0, -1], [0, 0]])],
-      debrief: ['The \\(x\\)-edge never turns; the \\(y\\)-edge leans over clockwise at rate 1. Average turning rate \\(-\\tfrac12\\), so \\(\\omega=-1\\). The angle at \\(A\\) closes at rate \\(2e_{12}=1\\) and, at first, neither edge lengthens, as in round 1.', 'Simple shear \\((y,0)\\): \\(\\underline{\\underline{e}}=\\tfrac12\\begin{pmatrix}0&1\\\\1&0\\end{pmatrix}\\), \\(\\omega=-1\\). \\((0,x)\\) has the same \\(\\underline{\\underline{e}}\\) but \\(\\omega=+1\\): there the \\(y\\)-edge is fixed and the \\(x\\)-edge turns anticlockwise. \\((-y,0)\\) opens the angle (\\(e_{12}<0\\)) and has \\(\\omega=+1\\). \\((y,x)\\) does not turn at all.']
+      title: 'One corner moves', brief: 'Same procedure. Which corner moves, and which way?',
+      arrows: true, ans: 0, cands: [F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(-y,\\,0)', [[0, -1], [0, 0]])],
+      debrief: ['\\(B\\) stays put: \\(\\partial u/\\partial x=\\partial v/\\partial x=0\\). \\(C\\) moves right: \\(\\partial u/\\partial y>0\\), \\(\\partial v/\\partial y=0\\). So \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y=0-1=-1\\): the \\(y\\)-edge leans over clockwise while the \\(x\\)-edge does not turn, and the angle at \\(A\\) closes (\\(2e_{12}=1\\)). This is simple shear \\((y,0)\\): \\(u\\) grows with \\(y\\), so the top of the square outruns the bottom.', '\\((0,x)\\) is the mirror image: \\(C\\) stays put and \\(B\\) moves up, so the \\(x\\)-edge turns anticlockwise and \\(\\omega=+1\\). \\((-y,0)\\) sends \\(C\\) left: the \\(y\\)-edge leans anticlockwise, \\(\\omega=+1\\), and the angle at \\(A\\) opens.']
     },
     {
-      title: 'Work it out', brief: 'Harder: four flows built from \\(x\\pm y\\). Write down \\(\\nabla\\underline{u}\\), then \\(\\underline{\\underline{e}}\\) and \\(\\omega\\), for each before you answer.', wide: true,
-      ans: 0, cands: [F('(x+y,\\,-x-y)', [[1, 1], [-1, -1]]), F('(x-y,\\,x+y)', [[1, -1], [1, 1]]), F('(x+y,\\,x-y)', [[1, 1], [1, -1]]), F('(x-y,\\,-x-y)', [[1, -1], [-1, -1]])],
-      debrief: ['The \\(x\\)-edge lengthens, the \\(y\\)-edge shortens, the angle at \\(A\\) stays a right angle, and both edges turn clockwise: \\(e_{11}=1\\), \\(e_{22}=-1\\), \\(e_{12}=0\\), \\(\\omega=-2\\). That is \\((x+y,-x-y)\\): \\(\\nabla\\underline{u}=\\begin{pmatrix}1&1\\\\-1&-1\\end{pmatrix}\\), antisymmetric part \\(\\begin{pmatrix}0&1\\\\-1&0\\end{pmatrix}\\).', '\\((x-y,x+y)\\): \\(e_{11}=e_{22}=1\\), \\(\\omega=+2\\): both edges lengthen, the area grows, and it turns anticlockwise. \\((x+y,x-y)\\) and \\((x-y,-x-y)\\) are symmetric, so \\(\\omega=0\\), and they close (\\(e_{12}=1\\)) or open (\\(e_{12}=-1\\)) the angle at \\(A\\).']
+      title: 'Both corners move', brief: 'Now without the arrows. Watch \\(B\\) and \\(C\\) separately, read off the four signs, then \\(\\omega\\).',
+      arrows: false, ans: 0, cands: [F('(y,\\,x)', [[0, 1], [1, 0]]), F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(y,\\,-x)', [[0, 1], [-1, 0]])],
+      debrief: ['\\(B\\) moves up (\\(\\partial v/\\partial x>0\\)) and \\(C\\) moves right (\\(\\partial u/\\partial y>0\\)) by the same amount, so \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y=1-1=0\\): the \\(x\\)-edge turns anticlockwise, the \\(y\\)-edge clockwise, no net turning. The angle at \\(A\\) closes twice as fast as in round 2 (\\(2e_{12}=2\\)) and neither edge lengthens at first. That is \\((y,x)\\), whose \\(\\nabla\\underline{u}\\) is symmetric.', '\\((y,0)\\) moves only \\(C\\); \\((0,x)\\) moves only \\(B\\). \\((y,-x)\\) sends \\(B\\) down and \\(C\\) right: both edges turn clockwise at the same rate, the angle stays a right angle and nothing deforms. That is a solid-body rotation with \\(\\omega=-2\\).']
     }
   ];
 
@@ -179,9 +183,9 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     W = Math.round(Math.min(maxW, maxH * 1.5)); H = Math.round(W / 1.5);
     const dpr = window.devicePixelRatio || 1;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); scale = H / 3.2; draw();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); scale = H / 2.3; draw();
   }
-  const sx = x => W / 2 + x * scale, sy = y => H / 2 - y * scale;
+  const sx = x => W * 0.32 + x * scale, sy = y => H * 0.78 - y * scale;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   // ---------- sound (synthesised, no files) ----------
   const snd = (() => {
@@ -221,7 +225,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex - h * Math.cos(ang - 0.45), ey - h * Math.sin(ang - 0.45)); c.lineTo(ex - h * Math.cos(ang + 0.45), ey - h * Math.sin(ang + 0.45)); c.closePath(); c.fill();
   }
   function poly(c, pts, X, Y, close) { c.beginPath(); pts.forEach((q, i) => i ? c.lineTo(X(q[0]), Y(q[1])) : c.moveTo(X(q[0]), Y(q[1]))); if (close) c.closePath(); }
-  const CORNERS = [[-HALF, -HALF], [HALF, -HALF], [HALF, HALF], [-HALF, HALF]];
+  const CORNERS = [[0, 0], [1, 0], [1, 1], [0, 1]]; // A, B, C' , C in flow units; A is pinned (translation removed)
   // draw one element under exp(A t): filled square, both diagonals, a dot on one corner
   function element(c, A, t, X, Y, lw) {
     const M = expm(A, t), q = CORNERS.map(v => apply(M, v)), cEl = css('--elem'), cDiag = css('--diag'), cInk = css('--ink'), cMuted = css('--muted');
@@ -230,7 +234,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     c.strokeStyle = cEl; c.lineWidth = lw; c.lineJoin = 'round'; poly(c, q, X, Y, true); c.stroke();
     c.strokeStyle = cDiag; c.lineWidth = lw * 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(X(q[1][0]), Y(q[1][1])); c.lineTo(X(q[0][0]), Y(q[0][1])); c.lineTo(X(q[3][0]), Y(q[3][1])); c.stroke();
     c.fillStyle = cInk; c.beginPath(); c.arc(X(q[0][0]), Y(q[0][1]), Math.max(3, lw * 1.4), 0, 2 * PI); c.fill();
-    if (lw > 2.2) { c.font = '600 14px ' + css('--font-body'); c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText('A', X(q[0][0]) - 6, Y(q[0][1]) + 2); c.textBaseline = 'alphabetic'; }
+    if (lw > 2.2) { c.font = '600 14px ' + css('--font-body'); c.textBaseline = 'middle'; c.textAlign = 'right'; c.fillText('A', X(q[0][0]) - 7, Y(q[0][1]) + 8); c.fillStyle = cDiag; c.textAlign = 'left'; c.fillText('B', X(q[1][0]) + 2, Y(q[1][1]) + 14); c.textAlign = 'right'; c.fillText('C', X(q[3][0]) - 6, Y(q[3][1]) - 8); c.textBaseline = 'alphabetic'; }
   }
   function draw() {
     const r = ROUNDS[R], A = trueA(), cLine = css('--line'), cFlow = css('--flow');
@@ -239,11 +243,19 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     if (st.phase === 'done') { // the velocity field relative to the element's centre: u = A x
       const n = 9, cell = H / n; ctx.globalAlpha = 0.45;
       let umax = 0; const pts = [];
-      for (let i = 0; i < Math.ceil(W / cell); i++) for (let j = 0; j < n; j++) { const x = (i + 0.5) * cell / scale - W / 2 / scale, y = H / 2 / scale - (j + 0.5) * cell / scale; const v = apply(A, [x, y]), m = Math.hypot(v[0], v[1]); if (m > 1e-9) { pts.push([x, y, v, m]); umax = Math.max(umax, m); } }
+      for (let i = 0; i < Math.ceil(W / cell); i++) for (let j = 0; j < n; j++) { const x = ((i + 0.5) * cell - W * 0.32) / scale, y = (H * 0.78 - (j + 0.5) * cell) / scale; const v = apply(A, [x, y]), m = Math.hypot(v[0], v[1]); if (m > 1e-9) { pts.push([x, y, v, m]); umax = Math.max(umax, m); } }
       pts.forEach(([x, y, v, m]) => arrow(ctx, sx(x), sy(y), v[0], v[1], cell * 0.8 * m / umax, cFlow)); ctx.globalAlpha = 1;
     }
     element(ctx, A, st.t, sx, sy, 2.5);
-    $('hint').textContent = (st.phase === 'done' ? 'arrows: the flow relative to the centre · ' : 'green: the edges from A · ') + 't = ' + st.t.toFixed(2);
+    if (r.arrows && st.phase !== 'done') { // the L06 p.4 arrows: velocity of B and C relative to A, drawn at the starting square
+      const M = expm(A, st.t), L = 0.4 * scale;
+      for (const c0 of [[1, 0], [0, 1]]) { const q = apply(M, c0), v = apply(A, q), m = Math.hypot(v[0], v[1]); if (m < 1e-9) continue;
+        const ang = Math.atan2(-v[1], v[0]), x0 = sx(q[0]), y0 = sy(q[1]), len = L * m, ex = x0 + len * Math.cos(ang), ey = y0 + len * Math.sin(ang), h = 9;
+        for (const [col, lw] of [[css('--surface'), 7], [cFlow, 3]]) { ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(ex - 4 * Math.cos(ang), ey - 4 * Math.sin(ang)); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - h * Math.cos(ang - 0.5), ey - h * Math.sin(ang - 0.5)); ctx.lineTo(ex - h * Math.cos(ang + 0.5), ey - h * Math.sin(ang + 0.5)); ctx.closePath(); ctx.fill(); if (lw === 7) ctx.stroke(); } }
+    }
+    $('hint').textContent = (st.phase === 'done' ? 'arrows: the flow relative to A · ' : r.arrows ? 'blue: how B and C move relative to A · ' : 'no arrows this time · ') + 't = ' + st.t.toFixed(2);
   }
   // the loop: deform over 2 s, hold 1 s, reset, repeat
   function loop(now) {
@@ -254,9 +266,9 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
   function drawDecomp(canvas, A) {
     const c = canvas.getContext('2d'), dpr = window.devicePixelRatio || 1, Wd = 300, Hd = 112;
     canvas.width = Wd * dpr; canvas.height = Hd * dpr; canvas.style.width = Wd + 'px'; canvas.style.height = Hd + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const s = 100 / (2 * HALF) * 0.3, cMuted = css('--muted');
+    const s = 30, cMuted = css('--muted');
     [[sym(A), 'strain only'], [asym(A), 'rotation only'], [A, 'both']].forEach(([M, lab], k) => {
-      const cx = 50 + k * 100; element(c, M, T, x => cx + x * s, y => 50 - y * s, 2);
+      const cx = 50 + k * 100; element(c, M, T, x => cx - 15 + x * s, y => 68 - y * s, 2);
       c.fillStyle = cMuted; c.font = '600 13px ' + css('--font-body'); c.textAlign = 'center'; c.fillText(lab, cx, Hd - 4);
     });
   }
@@ -267,7 +279,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] === 10 ? 'right' : results[i] === 5 ? 'half' : 'wrong'; box.append(e); });
     $('total').textContent = results.reduce((a, s) => a + (s || 0), 0);
   }
-  function showFinal(on) { for (const sel of ['#stage', '#brief']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function showFinal(on) { for (const sel of ['#stage', '#brief', '#key']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
   function load(i) {
     R = i; st = fresh(); const r = ROUNDS[R];
     $('final').hidden = true; $('card').hidden = false; showFinal(false);
@@ -278,7 +290,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     box.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => pick('f', b)));
     $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
     $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
-    renderDots(); size(); typeset([$('brief'), box]);
+    renderDots(); size(); typeset([$('brief'), $('key'), box]);
     cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
   }
   function pick(which, b) {
@@ -303,11 +315,11 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     // candidate table
     const fmt = v => (Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : (v < 0 ? '−' : '') + '½');
     const rows = r.cands.map((c, k) => { const E = sym(c.A);
-      return '<tr' + (k === r.ans ? ' class="is"' : '') + '><td>\\(' + c.tex + '\\)</td><td>' + fmt(omega(c.A)) + '</td><td>' + fmt(E[0][0]) + '</td><td>' + fmt(E[1][1]) + '</td><td>' + fmt(E[0][1]) + '</td><td>' + fmt(E[0][0] + E[1][1]) + '</td></tr>'; }).join('');
+      return '<tr' + (k === r.ans ? ' class="is"' : '') + '><td>\\(' + c.tex + '\\)</td><td>' + fmt(c.A[0][0]) + '</td><td>' + fmt(c.A[1][0]) + '</td><td>' + fmt(c.A[0][1]) + '</td><td>' + fmt(c.A[1][1]) + '</td><td>' + fmt(omega(c.A)) + '</td></tr>'; }).join('');
     const db = $('debrief');
     db.innerHTML = '<p>Split the true \\(\\nabla\\underline{u}=\\underline{\\underline{e}}+\\underline{\\underline{r}}\\) and apply each part on its own:</p><canvas id="dc" aria-label="The element under strain only, rotation only, and both"></canvas>'
-      + '<table class="cand" aria-label="The four candidates compared"><tr><th>flow</th><th>\\(\\omega\\)</th><th>\\(e_{11}\\)</th><th>\\(e_{22}\\)</th><th>\\(e_{12}\\)</th><th>\\(\\nabla\\!\\cdot\\!\\underline{u}\\)</th></tr>' + rows + '</table>'
-      + '<p class="tiny">\\(e_{11},e_{22}\\): rate of extension of the \\(x\\)- and \\(y\\)-edges; \\(2e_{12}\\): rate at which the angle at \\(A\\) closes; \\(\\omega/2\\): average turning rate of the two edges.</p>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
+      + '<table class="cand" aria-label="The four candidates compared"><tr><th>flow</th><th>\\(B\\) right<br>\\(\\partial u/\\partial x\\)</th><th>\\(B\\) up<br>\\(\\partial v/\\partial x\\)</th><th>\\(C\\) right<br>\\(\\partial u/\\partial y\\)</th><th>\\(C\\) up<br>\\(\\partial v/\\partial y\\)</th><th>\\(\\omega\\)</th></tr>' + rows + '</table>'
+      + '<p class="tiny">\\(\\partial u/\\partial x,\\ \\partial v/\\partial y\\): rates of extension of the \\(x\\)- and \\(y\\)-edges (\\(e_{11},e_{22}\\)); \\(\\partial v/\\partial x+\\partial u/\\partial y=2e_{12}\\): rate at which the angle at \\(A\\) closes; \\(\\omega/2\\): average turning rate of the two edges.</p>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
     db.hidden = false; drawDecomp($('dc'), A);
     $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
     renderDots(); typeset([$('result'), db]); draw();
