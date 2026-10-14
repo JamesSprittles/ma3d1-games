@@ -136,17 +136,17 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     {
       title: 'Watch B and C', brief: 'The square\'s corner \\(A\\) is held fixed (translation removed). Relative to \\(A\\), corner \\(B\\) moves at \\((\\partial u/\\partial x,\\ \\partial v/\\partial x)\\) and corner \\(C\\) at \\((\\partial u/\\partial y,\\ \\partial v/\\partial y)\\); the blue arrows show these. Read off the signs, then \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y\\).',
       arrows: true, ans: 0, cands: [F('(x,\\,-y)', [[1, 0], [0, -1]]), F('(-x,\\,y)', [[-1, 0], [0, 1]]), F('(x,\\,y)', [[1, 0], [0, 1]])],
-      debrief: ['\\(B\\) moves right, so \\(\\partial u/\\partial x>0\\); \\(C\\) moves down, so \\(\\partial v/\\partial y<0\\). Neither moves sideways: \\(\\partial v/\\partial x=\\partial u/\\partial y=0\\), so \\(\\omega=0\\) and the angle at \\(A\\) stays a right angle. Only the edge lengths change (\\(e_{11}=1\\), \\(e_{22}=-1\\)), and \\(\\nabla\\cdot\\underline{u}=0\\) keeps the area fixed.', '\\((-x,y)\\) would send \\(B\\) left and \\(C\\) up. \\((x,y)\\) sends \\(B\\) right but \\(C\\) up: both edges lengthen and the area grows, \\(\\nabla\\cdot\\underline{u}=2\\).']
+      debrief: ['\\(B\\) moves right (\\(\\partial u/\\partial x>0\\)), \\(C\\) moves down (\\(\\partial v/\\partial y<0\\)), neither sideways: \\(\\omega=0\\), the angle at \\(A\\) stays right, and \\(\\nabla\\cdot\\underline{u}=0\\) keeps the area fixed. \\((-x,y)\\) would send \\(B\\) left; \\((x,y)\\) would send \\(C\\) up.']
     },
     {
       title: 'One corner moves', brief: 'Same procedure. Which corner moves, and which way?',
       arrows: true, ans: 0, cands: [F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(-y,\\,0)', [[0, -1], [0, 0]])],
-      debrief: ['\\(B\\) stays put: \\(\\partial u/\\partial x=\\partial v/\\partial x=0\\). \\(C\\) moves right: \\(\\partial u/\\partial y>0\\), \\(\\partial v/\\partial y=0\\). So \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y=0-1=-1\\): the \\(y\\)-edge leans over clockwise while the \\(x\\)-edge does not turn, and the angle at \\(A\\) closes (\\(2e_{12}=1\\)). This is simple shear \\((y,0)\\): \\(u\\) grows with \\(y\\), so the top of the square outruns the bottom.', '\\((0,x)\\) is the mirror image: \\(C\\) stays put and \\(B\\) moves up, so the \\(x\\)-edge turns anticlockwise and \\(\\omega=+1\\). \\((-y,0)\\) sends \\(C\\) left: the \\(y\\)-edge leans anticlockwise, \\(\\omega=+1\\), and the angle at \\(A\\) opens.']
+      debrief: ['\\(B\\) stays put, \\(C\\) moves right: only \\(\\partial u/\\partial y>0\\), so \\(\\omega=0-1=-1\\) and the angle at \\(A\\) closes. Simple shear: \\(u\\) grows with \\(y\\). \\((0,x)\\) would move \\(B\\) up instead (\\(\\omega=+1\\)); \\((-y,0)\\) would move \\(C\\) left.']
     },
     {
       title: 'Both corners move', brief: 'Now without the arrows. Watch \\(B\\) and \\(C\\) separately, read off the four signs, then \\(\\omega\\).',
       arrows: false, ans: 0, cands: [F('(y,\\,x)', [[0, 1], [1, 0]]), F('(y,\\,0)', [[0, 1], [0, 0]]), F('(0,\\,x)', [[0, 0], [1, 0]]), F('(y,\\,-x)', [[0, 1], [-1, 0]])],
-      debrief: ['\\(B\\) moves up (\\(\\partial v/\\partial x>0\\)) and \\(C\\) moves right (\\(\\partial u/\\partial y>0\\)) by the same amount, so \\(\\omega=\\partial v/\\partial x-\\partial u/\\partial y=1-1=0\\): the \\(x\\)-edge turns anticlockwise, the \\(y\\)-edge clockwise, no net turning. The angle at \\(A\\) closes twice as fast as in round 2 (\\(2e_{12}=2\\)) and neither edge lengthens at first. That is \\((y,x)\\), whose \\(\\nabla\\underline{u}\\) is symmetric.', '\\((y,0)\\) moves only \\(C\\); \\((0,x)\\) moves only \\(B\\). \\((y,-x)\\) sends \\(B\\) down and \\(C\\) right: both edges turn clockwise at the same rate, the angle stays a right angle and nothing deforms. That is a solid-body rotation with \\(\\omega=-2\\).']
+      debrief: ['\\(B\\) moves up and \\(C\\) moves right by the same amount: \\(\\omega=1-1=0\\), no net turning, and the angle at \\(A\\) closes. \\(\\nabla\\underline{u}\\) is symmetric: \\((y,x)\\). \\((y,-x)\\) would send \\(B\\) down: both edges turn the same way, a rigid rotation with \\(\\omega=-2\\).']
     }
   ];
 
@@ -166,6 +166,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     for (let k = 0; k < n; k++) M = mul(S, M);
     return M;
   }
+  const lin = (A, t) => [[1 + A[0][0] * t, A[0][1] * t], [A[1][0] * t, 1 + A[1][1] * t]]; // first-order map, as in L06 p.4
   const sym = A => [[A[0][0], (A[0][1] + A[1][0]) / 2], [(A[0][1] + A[1][0]) / 2, A[1][1]]];
   const asym = A => [[0, (A[0][1] - A[1][0]) / 2], [(A[1][0] - A[0][1]) / 2, 0]];
   const omega = A => A[1][0] - A[0][1];
@@ -228,7 +229,7 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
   const CORNERS = [[0, 0], [1, 0], [1, 1], [0, 1]]; // A, B, C' , C in flow units; A is pinned (translation removed)
   // draw one element under exp(A t): filled square, both diagonals, a dot on one corner
   function element(c, A, t, X, Y, lw) {
-    const M = expm(A, t), q = CORNERS.map(v => apply(M, v)), cEl = css('--elem'), cDiag = css('--diag'), cInk = css('--ink'), cMuted = css('--muted');
+    const M = lin(A, t), q = CORNERS.map(v => apply(M, v)), cEl = css('--elem'), cDiag = css('--diag'), cInk = css('--ink'), cMuted = css('--muted');
     c.setLineDash([3, 3]); c.strokeStyle = cMuted; c.lineWidth = 1; poly(c, CORNERS, X, Y, true); c.stroke(); c.setLineDash([]);
     c.fillStyle = cEl; c.globalAlpha = 0.22; poly(c, q, X, Y, true); c.fill(); c.globalAlpha = 1;
     c.strokeStyle = cEl; c.lineWidth = lw; c.lineJoin = 'round'; poly(c, q, X, Y, true); c.stroke();
@@ -248,8 +249,8 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     }
     element(ctx, A, st.t, sx, sy, 2.5);
     if (r.arrows && st.phase !== 'done') { // the L06 p.4 arrows: velocity of B and C relative to A, drawn at the starting square
-      const M = expm(A, st.t), L = 0.4 * scale;
-      for (const c0 of [[1, 0], [0, 1]]) { const q = apply(M, c0), v = apply(A, q), m = Math.hypot(v[0], v[1]); if (m < 1e-9) continue;
+      const M = lin(A, st.t), L = 0.4 * scale;
+      for (const c0 of [[1, 0], [0, 1]]) { const q = apply(M, c0), v = apply(A, c0), m = Math.hypot(v[0], v[1]); if (m < 1e-9) continue;
         const ang = Math.atan2(-v[1], v[0]), x0 = sx(q[0]), y0 = sy(q[1]), len = L * m, ex = x0 + len * Math.cos(ang), ey = y0 + len * Math.sin(ang), h = 9;
         for (const [col, lw] of [[css('--surface'), 7], [cFlow, 3]]) { ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
           ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(ex - 4 * Math.cos(ang), ey - 4 * Math.sin(ang)); ctx.stroke();
@@ -317,9 +318,9 @@ table.cand tr.is td { font-weight: 700; color: var(--good); }
     const rows = r.cands.map((c, k) => { const E = sym(c.A);
       return '<tr' + (k === r.ans ? ' class="is"' : '') + '><td>\\(' + c.tex + '\\)</td><td>' + fmt(c.A[0][0]) + '</td><td>' + fmt(c.A[1][0]) + '</td><td>' + fmt(c.A[0][1]) + '</td><td>' + fmt(c.A[1][1]) + '</td><td>' + fmt(omega(c.A)) + '</td></tr>'; }).join('');
     const db = $('debrief');
-    db.innerHTML = '<p>Split the true \\(\\nabla\\underline{u}=\\underline{\\underline{e}}+\\underline{\\underline{r}}\\) and apply each part on its own:</p><canvas id="dc" aria-label="The element under strain only, rotation only, and both"></canvas>'
+    db.innerHTML = '<p>\\(\\nabla\\underline{u}=\\underline{\\underline{e}}+\\underline{\\underline{r}}\\), each part on its own:</p><canvas id="dc" aria-label="The element under strain only, rotation only, and both"></canvas>'
       + '<table class="cand" aria-label="The four candidates compared"><tr><th>flow</th><th>\\(B\\) right<br>\\(\\partial u/\\partial x\\)</th><th>\\(B\\) up<br>\\(\\partial v/\\partial x\\)</th><th>\\(C\\) right<br>\\(\\partial u/\\partial y\\)</th><th>\\(C\\) up<br>\\(\\partial v/\\partial y\\)</th><th>\\(\\omega\\)</th></tr>' + rows + '</table>'
-      + '<p class="tiny">\\(\\partial u/\\partial x,\\ \\partial v/\\partial y\\): rates of extension of the \\(x\\)- and \\(y\\)-edges (\\(e_{11},e_{22}\\)); \\(\\partial v/\\partial x+\\partial u/\\partial y=2e_{12}\\): rate at which the angle at \\(A\\) closes; \\(\\omega/2\\): average turning rate of the two edges.</p>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
+      + '' + r.debrief.map(s => '<p>' + s + '</p>').join('');
     db.hidden = false; drawDecomp($('dc'), A);
     $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
     renderDots(); typeset([$('result'), db]); draw();
