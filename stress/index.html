@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Feel the Stress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: phone column. A square element sits in a flow; the student says which way the traction T·n acts on each face, then the net force. */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
+  --flow: #1F5FA8; --elem: #C24A00; --diag: #0B7A55; --key: #C0392B; --good: #0B7A55;
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+    --flow: #79AEEA; --elem: #FF9A5C; --diag: #4CC79A; --key: #F0756A; --good: #4CC79A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151B; --surface: #1A2029; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2E3744;
+  --flow: #79AEEA; --elem: #FF9A5C; --diag: #4CC79A; --key: #F0756A; --good: #4CC79A; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; }
+.app { max-width: 560px; margin: 0 auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
+.dot[data-s="now"] { border-color: var(--ink); }
+.dot[data-s="right"] { background: var(--good); border-color: var(--good); }
+.dot[data-s="half"] { background: linear-gradient(90deg, var(--good) 50%, transparent 50%); border-color: var(--good); }
+.dot[data-s="wrong"] { background: var(--key); border-color: var(--key); }
+.score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.score b { color: var(--ink); }
+.sndbtn { font-size: 18px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; margin-left: 8px; cursor: pointer; vertical-align: middle; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+.brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
+.key { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+.stage { position: relative; align-self: center; border-radius: 10px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); touch-action: none; }
+canvas { display: block; }
+.hint { position: absolute; left: 8px; top: 6px; font-size: 14px; color: var(--muted); pointer-events: none; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.q { margin: 0; font-weight: 600; font-size: 16px; }
+.q small { font-weight: 400; color: var(--muted); }
+.choices { display: grid; gap: 6px; }
+.choices.five { grid-template-columns: repeat(5, 1fr); }
+.choices.three { grid-template-columns: repeat(3, 1fr); }
+.choice small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
+.choice { font: 600 16px/1.2 var(--font-body); padding: 9px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; min-height: 44px; }
+.choice.arrowbtn { font-size: 22px; padding: 6px 2px; }
+.choice[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.choice.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.choice.wrong { border-color: var(--key); }
+.choice:disabled { cursor: default; }
+.faces { display: flex; gap: 6px; }
+.face { flex: 1; font: 600 15px/1.2 var(--font-body); padding: 6px 4px; border-radius: 8px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; min-height: 44px; }
+.face[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.face .v { display: block; font-size: 20px; line-height: 1; }
+.face.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.face.wrong { border-color: var(--key); }
+.face:disabled { cursor: default; }
+.actions { display: flex; gap: 8px; }
+button.primary { flex: 1; font: 700 17px/1 var(--font-body); border-radius: 8px; padding: 13px 16px; background: var(--ink); color: var(--surface); border: 1px solid transparent; cursor: pointer; }
+button.primary:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
+.result { margin: 0; font-size: 16px; }
+.result:empty { display: none; }
+.result.ok { color: var(--good); font-weight: 600; }
+.result.no { color: var(--key); font-weight: 600; }
+.debrief { border-top: 1px solid var(--line); padding-top: 8px; font-size: 15.5px; display: flex; flex-direction: column; gap: 6px; }
+.debrief p { margin: 0; }
+table.cand { border-collapse: collapse; font-size: 15px; width: 100%; }
+table.cand th, table.cand td { padding: 3px 3px; text-align: center; border-bottom: 1px solid var(--line); }
+table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(--muted); }
+.final { text-align: center; gap: 14px; padding-block: 22px; }
+.emo { font-size: 110px; line-height: 1.15; }
+.emo.spin { display: inline-block; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .emo.spin { animation: none; } }
+.final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+.foot { font-size: 13px; color: var(--muted); text-align: center; margin: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="dots" id="dots" aria-label="Rounds"></div>
+    <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
+  </div>
+  <h1 id="title"></h1>
+  <p class="brief" id="brief"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="A square fluid element in a flow; tap a face to select it"></canvas>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <p class="key" id="key">Traction on a face \(=\underline{\underline{T}}\cdot\underline{n}\), \(\underline{n}\) outward: the force per area that the fluid outside exerts on the element. \(\underline{\underline{T}}=-p\,\underline{\underline{I}}+2\mu\,\underline{\underline{e}}\).</p>
+
+  <section class="card" id="card">
+    <p class="q">Which way does the traction act on each face? <small>Tap a face, then an arrow.</small></p>
+    <div class="faces" id="faces" role="group" aria-label="Faces of the element">
+      <button class="face" data-f="0" aria-pressed="false">top<span class="v">·</span></button>
+      <button class="face" data-f="1" aria-pressed="false">right<span class="v">·</span></button>
+      <button class="face" data-f="2" aria-pressed="false">bottom<span class="v">·</span></button>
+      <button class="face" data-f="3" aria-pressed="false">left<span class="v">·</span></button>
+    </div>
+    <div class="choices five" id="chD" role="group" aria-label="Direction of the traction on the selected face">
+      <button class="choice arrowbtn" data-d="L" aria-label="left">←</button>
+      <button class="choice arrowbtn" data-d="R" aria-label="right">→</button>
+      <button class="choice arrowbtn" data-d="U" aria-label="up">↑</button>
+      <button class="choice arrowbtn" data-d="D" aria-label="down">↓</button>
+      <button class="choice arrowbtn" data-d="0" aria-label="no traction">∅</button>
+    </div>
+    <p class="q">Net force on the element from these tractions?</p>
+    <div class="choices three" id="chN" role="group" aria-label="Net force">
+      <button class="choice" data-n="L" aria-pressed="false">←<br><small>to the left</small></button>
+      <button class="choice" data-n="0" aria-pressed="false">zero<br><small>they cancel</small></button>
+      <button class="choice" data-n="R" aria-pressed="false">→<br><small>to the right</small></button>
+    </div>
+    <div class="actions">
+      <button class="primary" id="go" disabled>Reveal</button>
+      <button class="primary" id="next" hidden>Next</button>
+    </div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <div class="debrief" id="debrief" hidden></div>
+  </section>
+
+  <section class="card final" id="final" hidden>
+    <div class="emo" id="emo" aria-hidden="true"></div>
+    <div>Your total</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <p class="foot">MA3D1 · Chapter 2, the stress tensor and the Newtonian fluid</p>
+</div>
+
+<script>
+(function () {
+  const PI = Math.PI, T = 0.35, h = 0.5; // the element has side 1, centred on the origin of local coordinates; deformation shown for time T
+  // Each round: vel(x,y) = velocity relative to the element's centre; A = grad u at the centre (for the deformation clip);
+  // sig(x,y) = viscous stress / mu; p(x,y) = pressure (rounds that use it). Tractions are computed numerically from T·n at the face midpoints.
+  const Z = () => [[0, 0], [0, 0]];
+  const ROUNDS = [
+    {
+      title: 'Pressure only', brief: 'Fluid at rest, with the pressure increasing to the right (darker = higher \\(p\\)). No viscous stress here, so \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}\\). Which way is each face pushed, and what is the net force?',
+      rest: true, G: 0.6, vel: () => [0, 0], A: Z(), sig: () => Z(), p: (x, y) => 1 + 0.6 * x,
+      debrief: ['Pressure pushes <em>in</em> on every face, \\(-p\\,\\underline{n}\\). The right face is pushed harder than the left, so the net force points left: \\(-\\nabla p\\) per unit volume. It is the pressure <em>gradient</em>, not the pressure, that pushes fluid.']
+    },
+    {
+      title: 'Simple shear', brief: 'Now \\(\\underline{u}=(y,\\,0)\\) relative to the element (pressure uniform, so only the viscous part \\(\\underline{\\underline{\\sigma}}=2\\mu\\,\\underline{\\underline{e}}\\) matters). The faster fluid above and the slower fluid below drag the top and bottom faces. What about the two side faces?',
+      vel: (x, y) => [y, 0], A: [[0, 1], [0, 0]], sig: () => [[0, 1], [1, 0]], p: () => 0,
+      debrief: ['\\(e_{12}=e_{21}=\\tfrac12\\), so \\(\\sigma_{12}=\\sigma_{21}=\\mu\\): the top face is dragged forward, the bottom back, and because \\(\\underline{\\underline{\\sigma}}\\) is symmetric the side faces feel tangential tractions too, up on the right and down on the left. Without them the four tractions would spin the element: that is angular momentum conservation (L09) at work.', 'The stress is the same everywhere, so the tractions cancel: no net viscous force in simple shear.']
+    },
+    {
+      title: 'Stretching', brief: 'Relative flow \\(\\underline{u}=(x,\\,-y)\\): the element is pulled out along \\(x\\) and squashed along \\(y\\). Viscous part only again. Does viscosity act on these faces at all, and which way?',
+      vel: (x, y) => [x, -y], A: [[1, 0], [0, -1]], sig: () => [[2, 0], [0, -2]], p: () => 0,
+      debrief: ['Viscous stress is not only shear. \\(e_{11}=1\\) gives \\(\\sigma_{11}=2\\mu\\) (Vevox Q16): the side faces are pulled outward along \\(x\\), and \\(\\sigma_{22}=-2\\mu\\) pushes the top and bottom inward. Viscosity resists stretching as well as sliding. Uniform again, so no net force.']
+    },
+    {
+      title: 'Near the wall', brief: 'Channel flow \\(u=1-y^2\\) between walls at \\(y=\\pm1\\); the element sits at \\(y=\\tfrac12\\), above the centreline, and the arrows show the flow relative to it. Viscous part only. Which way is each face dragged, and do they cancel this time?',
+      channel: true, vel: (x, y) => [-(y / 2) - (y * y) / 4, 0], A: [[0, -0.5], [0, 0]],
+      // in element units y_e: channel y_c = 1/2 + y_e/2, u = 1 - y_c^2, so sigma_12 = mu du/dy_e = -y_c
+      sig: (x, y) => { const yc = 0.5 + y / 2; return [[0, -yc], [-yc, 0]]; }, p: () => 0,
+      debrief: ['\\(\\sigma_{12}=\\mu\\,\\partial u/\\partial y\\) is negative here: the slower fluid above drags the top face backward and the faster fluid below pushes the bottom forward, with the side faces sheared down on the right and up on the left. But \\(|\\sigma_{12}|\\) grows towards the wall, so the backward pull on the top wins: the net viscous force is \\(\\mu\\,\\partial^2 u/\\partial y^2<0\\) per unit volume, a drag.', 'In steady flow something must balance it: the pressure gradient. That is Poiseuille flow, next lecture.']
+    }
+  ];
+  const FACES = [ // name, outward normal, midpoint
+    { n: [0, 1], m: [0, h] }, { n: [1, 0], m: [h, 0] }, { n: [0, -1], m: [0, -h] }, { n: [-1, 0], m: [-h, 0] }
+  ];
+  const DIRS = { L: [-1, 0], R: [1, 0], U: [0, 1], D: [0, -1], 0: [0, 0] };
+  const SYM = { L: '←', R: '→', U: '↑', D: '↓', 0: '∅' };
+
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let R = 0, st, results = ROUNDS.map(() => null), raf = 0;
+  $('max').textContent = ROUNDS.length * 10;
+
+  function fresh() { return { phase: 'predict', sel: 0, d: [null, null, null, null], n: null, t: 0, t0: performance.now() }; }
+  function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
+  const apply = (M, v) => [M[0][0] * v[0] + M[0][1] * v[1], M[1][0] * v[0] + M[1][1] * v[1]];
+  const lin = (A, t) => [[1 + A[0][0] * t, A[0][1] * t], [A[1][0] * t, 1 + A[1][1] * t]];
+  // traction T·n at a face midpoint: (-p I + sigma)·n
+  function traction(r, f) {
+    const F = FACES[f], S = r.sig(F.m[0], F.m[1]), p = r.p(F.m[0], F.m[1]);
+    const Tm = [[-p + S[0][0], S[0][1]], [S[1][0], -p + S[1][1]]];
+    return apply(Tm, F.n);
+  }
+  const dirOf = v => { const m = Math.hypot(v[0], v[1]); if (m < 1e-9) return '0'; return Math.abs(v[0]) >= Math.abs(v[1]) ? (v[0] > 0 ? 'R' : 'L') : (v[1] > 0 ? 'U' : 'D'); };
+  function netOf(r) { const s = [0, 0]; for (let f = 0; f < 4; f++) { const t = traction(r, f); s[0] += t[0]; s[1] += t[1]; } return Math.abs(s[0]) < 1e-9 ? '0' : s[0] > 0 ? 'R' : 'L'; }
+
+  let W = 300, H = 300, scale = 1;
+  function size() {
+    const maxW = Math.min(stage.parentElement.clientWidth - 24, 420), maxH = Math.max(200, window.innerHeight * 0.27);
+    W = Math.round(Math.min(maxW, maxH * 1.4)); H = Math.round(W / 1.4);
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); scale = H / 2.8; draw();
+  }
+  const sx = x => W / 2 + x * scale, sy = y => H / 2 - y * scale;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // ---------- sound (synthesised, no files) ----------
+  const snd = (() => {
+    let ac = null, on = true;
+    try { on = localStorage.getItem('ma3d1-sound') !== 'off'; } catch (e) {}
+    const ctxA = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (ac.state === 'suspended') ac.resume(); return ac; };
+    function tone(f0, t0, dur, type, gain, f1) {
+      const a = ctxA(); if (!a || !on) return; const o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, a.currentTime + t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + t0 + dur);
+      g.gain.setValueAtTime(0.0001, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(gain || 0.2, a.currentTime + t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+      o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.05);
+    }
+    return {
+      get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('ma3d1-sound', on ? 'on' : 'off'); } catch (e) {} if (on) tone(660, 0, 0.12, 'sine', 0.15); return on; },
+      wake() { ctxA(); },
+      ok() { tone(523, 0, 0.12, 'triangle', 0.18); tone(784, 0.12, 0.22, 'triangle', 0.18); },
+      half() { tone(523, 0, 0.15, 'triangle', 0.15); },
+      no() { tone(330, 0, 0.18, 'sawtooth', 0.08, 262); tone(262, 0.18, 0.3, 'sawtooth', 0.08, 196); },
+      final(fr) {
+        if (fr === 1) { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.25, 'triangle', 0.18)); tone(1047, 0.55, 0.6, 'triangle', 0.18); }
+        else if (fr >= 0.7) { [523, 659, 784].forEach((f, i) => tone(f, i * 0.14, 0.3, 'triangle', 0.16)); }
+        else if (fr >= 0.4) { tone(392, 0, 0.3, 'triangle', 0.14); tone(330, 0.3, 0.5, 'triangle', 0.14); }
+        else { [294, 277, 262, 247].forEach((f, i) => tone(f, i * 0.35, 0.5, 'sawtooth', 0.07, f * 0.94)); }
+      }
+    };
+  })();
+  const sndBtn = $('sndBtn');
+  const paintSnd = () => { sndBtn.textContent = snd.on ? '🔊' : '🔇'; sndBtn.setAttribute('aria-label', snd.on ? 'Sound on. Tap to mute' : 'Sound off. Tap to unmute'); };
+  paintSnd(); sndBtn.addEventListener('click', () => { snd.toggle(); paintSnd(); });
+
+  function arrow(c, x, y, ux, uy, len, col, lw, head) {
+    const ang = Math.atan2(-uy, ux), ex = x + len * Math.cos(ang), ey = y + len * Math.sin(ang);
+    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = lw || 1.3; c.lineCap = 'round';
+    const hd = head || Math.min(6, len * 0.45);
+    c.beginPath(); c.moveTo(x, y); c.lineTo(ex - 0.5 * hd * Math.cos(ang), ey - 0.5 * hd * Math.sin(ang)); c.stroke();
+    c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex - hd * Math.cos(ang - 0.5), ey - hd * Math.sin(ang - 0.5)); c.lineTo(ex - hd * Math.cos(ang + 0.5), ey - hd * Math.sin(ang + 0.5)); c.closePath(); c.fill();
+  }
+  // a thick arrow with a halo so it reads over the element
+  function bigArrow(c, x, y, ux, uy, len, col) { arrow(c, x, y, ux, uy, len, css('--surface'), 7, 11); arrow(c, x, y, ux, uy, len, col, 3, 11); }
+  function poly(c, pts, X, Y, close) { c.beginPath(); pts.forEach((q, i) => i ? c.lineTo(X(q[0]), Y(q[1])) : c.moveTo(X(q[0]), Y(q[1]))); if (close) c.closePath(); }
+  const CORNERS = [[-h, -h], [h, -h], [h, h], [-h, h]];
+  const FACE_EDGES = [[3, 2], [1, 2], [0, 1], [0, 3]]; // corner indices of top, right, bottom, left faces of the reference square
+
+  function draw() {
+    const r = ROUNDS[R], cLine = css('--line'), cFlow = css('--flow'), cElem = css('--elem'), cInk = css('--ink'), cMuted = css('--muted'), cKey = css('--key'), cGood = css('--good');
+    ctx.clearRect(0, 0, W, H);
+    if (r.rest) { // pressure shading, darker to the right
+      const g = ctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, 'rgba(31,95,168,0.04)'); g.addColorStop(1, 'rgba(31,95,168,0.30)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = cMuted; ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText('p increases →', W - 8, H - 8);
+    }
+    if (r.channel) { // the top wall at y_e = 1 and the centreline at y_e = -1
+      ctx.fillStyle = cMuted; ctx.globalAlpha = 0.5; ctx.fillRect(0, 0, W, sy(1)); ctx.globalAlpha = 1;
+      ctx.strokeStyle = cInk; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, sy(1)); ctx.lineTo(W, sy(1)); ctx.stroke();
+      ctx.fillStyle = cInk; ctx.font = '600 13px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText('wall, y = 1', W - 8, sy(1) + 16);
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = cMuted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, sy(-1)); ctx.lineTo(W, sy(-1)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = cMuted; ctx.fillText('centreline, y = 0', W - 8, sy(-1) + 15);
+    }
+    if (!r.rest) { // the relative velocity field
+      const n = 10, cell = H / n; ctx.globalAlpha = 0.45; let umax = 0; const pts = [];
+      for (let i = 0; i < Math.ceil(W / cell); i++) for (let j = 0; j < n; j++) {
+        const px = (i + 0.5) * cell, py = (j + 0.5) * cell, x = (px - W / 2) / scale, y = (H / 2 - py) / scale;
+        if (r.channel && y > 1) continue;
+        const v = r.vel(x, y), m = Math.hypot(v[0], v[1]); if (m > 1e-9) { pts.push([x, y, v, m]); umax = Math.max(umax, m); } }
+      pts.forEach(([x, y, v, m]) => arrow(ctx, sx(x), sy(y), v[0], v[1], cell * 0.85 * m / umax, cFlow)); ctx.globalAlpha = 1;
+    }
+    // the deforming element (clip), then the reference square on top
+    const M = lin(r.A, st.t), q = CORNERS.map(v => apply(M, v));
+    ctx.fillStyle = cElem; ctx.globalAlpha = 0.2; poly(ctx, q, sx, sy, true); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = cElem; ctx.lineWidth = 2; ctx.lineJoin = 'round'; poly(ctx, q, sx, sy, true); ctx.stroke();
+    ctx.strokeStyle = cInk; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); poly(ctx, CORNERS, sx, sy, true); ctx.stroke(); ctx.setLineDash([]);
+    // face highlights: selected (predict) or right/wrong (done)
+    FACE_EDGES.forEach(([a, b], f) => {
+      let col = null;
+      if (st.phase === 'predict') { if (f === st.sel) col = cInk; }
+      else col = st.d[f] === dirOf(traction(r, f)) ? cGood : cKey;
+      if (!col) return;
+      ctx.strokeStyle = col; ctx.lineWidth = st.phase === 'predict' ? 4 : 3.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(sx(CORNERS[a][0]), sy(CORNERS[a][1])); ctx.lineTo(sx(CORNERS[b][0]), sy(CORNERS[b][1])); ctx.stroke();
+    });
+    // arrows on the faces: the student's picks (predict) or the true tractions (done)
+    if (st.phase === 'predict') {
+      FACES.forEach((F, f) => { const d = st.d[f]; if (d === null) return; const x = sx(F.m[0]), y = sy(F.m[1]);
+        if (d === '0') { ctx.fillStyle = cInk; ctx.font = '700 15px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('∅', x + 11 * F.n[0], y - 11 * F.n[1]); ctx.textBaseline = 'alphabetic'; return; }
+        const v = DIRS[d], L = 0.28 * scale; bigArrow(ctx, x - v[0] * L / 2, y + v[1] * L / 2, v[0], v[1], L, cInk); });
+    } else {
+      const ts = FACES.map((_, f) => traction(r, f)), tmax = Math.max(...ts.map(t => Math.hypot(t[0], t[1])), 1e-9);
+      ts.forEach((t, f) => { const F = FACES[f], m = Math.hypot(t[0], t[1]), x = sx(F.m[0]), y = sy(F.m[1]);
+        if (m < 1e-9) { ctx.fillStyle = cKey; ctx.font = '700 15px ' + css('--font-body'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('∅', x + 11 * F.n[0], y - 11 * F.n[1]); ctx.textBaseline = 'alphabetic'; return; }
+        const L = 0.42 * scale * m / tmax, ux = t[0] / m, uy = t[1] / m;
+        // tangential tractions are drawn along the face; normal ones start at the face and point in or out
+        const along = Math.abs(ux * F.n[0] + uy * F.n[1]) < 1e-6;
+        bigArrow(ctx, along ? x - ux * L / 2 : (ux * F.n[0] + uy * F.n[1] > 0 ? x : x - ux * L), along ? y + uy * L / 2 : (ux * F.n[0] + uy * F.n[1] > 0 ? y : y + uy * L), ux, uy, L, cKey); });
+    }
+    $('hint').textContent = st.phase === 'done' ? 'red: the tractions, length ∝ size' : r.rest ? 'at rest' : 'blue: flow relative to the element · t = ' + st.t.toFixed(2);
+  }
+  function loop(now) {
+    const period = 3000, u = ((now - st.t0) % period) / 1000;
+    st.t = reduceMotion ? T : Math.min(T, u / 2 * T);
+    draw(); raf = requestAnimationFrame(loop);
+  }
+
+  // ---------- UI ----------
+  function renderDots() {
+    const box = $('dots'); box.innerHTML = '';
+    ROUNDS.forEach((_, i) => { const e = document.createElement('span'); e.className = 'dot'; e.dataset.s = results[i] === null ? (i === R ? 'now' : '') : results[i] === 10 ? 'right' : results[i] > 0 ? 'half' : 'wrong'; box.append(e); });
+    $('total').textContent = results.reduce((a, s) => a + (s || 0), 0);
+  }
+  function paintFaces() {
+    document.querySelectorAll('#faces .face').forEach(b => { const f = +b.dataset.f; b.setAttribute('aria-pressed', String(f === st.sel && st.phase === 'predict')); b.querySelector('.v').textContent = st.d[f] === null ? '·' : SYM[st.d[f]]; });
+    document.querySelectorAll('#chD .choice').forEach(b => b.setAttribute('aria-pressed', String(st.d[st.sel] === b.dataset.d)));
+    $('go').disabled = !(st.d.every(d => d !== null) && st.n !== null);
+  }
+  function showFinal(on) { for (const sel of ['#stage', '#brief', '#key']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
+  function load(i) {
+    R = i; st = fresh(); const r = ROUNDS[R];
+    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
+    document.querySelectorAll('#faces .face, #chD .choice, #chN .choice').forEach(b => { b.className = b.className.replace(/ (right|wrong)/g, ''); b.disabled = false; });
+    document.querySelectorAll('#chN .choice').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    $('go').hidden = false; $('next').hidden = true;
+    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    paintFaces(); renderDots(); size(); typeset([$('brief'), $('key')]);
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  }
+  document.querySelectorAll('#faces .face').forEach(b => b.addEventListener('click', () => { if (st.phase !== 'predict') return; st.sel = +b.dataset.f; paintFaces(); draw(); }));
+  document.querySelectorAll('#chD .choice').forEach(b => b.addEventListener('click', () => {
+    if (st.phase !== 'predict') return; st.d[st.sel] = b.dataset.d;
+    const nxt = [1, 2, 3, 0, 1, 2, 3].slice(st.sel).find(f => st.d[f] === null); if (nxt !== undefined) st.sel = nxt; // move on to the next unset face
+    paintFaces(); draw();
+  }));
+  document.querySelectorAll('#chN .choice').forEach(b => b.addEventListener('click', () => {
+    if (st.phase !== 'predict') return; document.querySelectorAll('#chN .choice').forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); st.n = b.dataset.n; paintFaces();
+  }));
+  // tap a face on the picture
+  cv.addEventListener('pointerdown', ev => {
+    if (st.phase !== 'predict') return; const rect = cv.getBoundingClientRect(), x = (ev.clientX - rect.left - W / 2) / scale, y = (H / 2 - (ev.clientY - rect.top)) / scale;
+    if (Math.max(Math.abs(x), Math.abs(y)) > 0.95) return;
+    st.sel = Math.abs(x) >= Math.abs(y) ? (x > 0 ? 1 : 3) : (y > 0 ? 0 : 2); paintFaces(); draw();
+  });
+
+  const vec = v => '(' + fmt(v[0]) + ',\\ ' + fmt(v[1]) + ')';
+  const fmt = v => { const a = Math.abs(v); const s = Math.abs(a - Math.round(a)) < 1e-9 ? String(Math.round(a)) : Math.abs(a - 0.5) < 1e-9 ? '\\tfrac12' : Math.abs(a - 1.5) < 1e-9 ? '\\tfrac32' : Math.abs(a - 0.25) < 1e-9 ? '\\tfrac14' : Math.abs(a - 0.75) < 1e-9 ? '\\tfrac34' : a.toFixed(2); return (v < -1e-9 ? '-' : '') + s; };
+  $('go').addEventListener('click', () => {
+    if (st.phase !== 'predict' || st.d.some(d => d === null) || st.n === null) return;
+    const r = ROUNDS[R], ts = FACES.map((_, f) => traction(r, f)), truth = ts.map(dirOf), net = netOf(r);
+    st.phase = 'done'; snd.wake();
+    const okF = truth.map((d, f) => d === st.d[f]), nF = okF.filter(Boolean).length, okN = st.n === net, pts = 2 * nF + (okN ? 2 : 0); results[R] = pts;
+    if (pts === 10) snd.ok(); else if (pts >= 5) snd.half(); else snd.no();
+    document.querySelectorAll('#faces .face').forEach(b => { b.disabled = true; b.setAttribute('aria-pressed', 'false'); b.classList.add(okF[+b.dataset.f] ? 'right' : 'wrong'); b.querySelector('.v').textContent = SYM[st.d[+b.dataset.f]] + (okF[+b.dataset.f] ? '' : ' ' + SYM[truth[+b.dataset.f]]); });
+    document.querySelectorAll('#chD .choice').forEach(b => { b.disabled = true; b.setAttribute('aria-pressed', 'false'); });
+    document.querySelectorAll('#chN .choice').forEach(c => { c.disabled = true; if (c.dataset.n === net) c.classList.add('right'); else if (c.dataset.n === st.n) c.classList.add('wrong'); });
+    $('result').textContent = (nF === 4 ? 'All four faces right' : nF + ' of 4 faces right') + (okN ? ', net force right. ' : ', net force wrong. ') + '+' + pts;
+    $('result').className = 'result ' + (pts ? 'ok' : 'no');
+    const names = ['top', 'right', 'bottom', 'left'];
+    const rows = FACES.map((F, f) => '<tr><td>' + names[f] + '</td><td>\\(' + vec(F.n) + '\\)</td><td>\\(' + vec(ts[f]) + (r.rest ? '\\,p_0' : r.channel ? '' : '\\,\\mu') + '\\)</td><td>' + SYM[truth[f]] + '</td></tr>').join('');
+    const S = r.sig(0, 0), head = r.rest ? '<p>At the element, \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}\\) with \\(p=p_0(1+0.6x)\\); traction \\(=-p\\,\\underline{n}\\) at each face\'s midpoint:</p>'
+      : '<p>At the centre, \\(\\underline{\\underline{\\sigma}}=2\\mu\\,\\underline{\\underline{e}}=\\mu\\begin{pmatrix}' + fmt(S[0][0]) + '&' + fmt(S[0][1]) + '\\\\' + fmt(S[1][0]) + '&' + fmt(S[1][1]) + '\\end{pmatrix}\\)' + (r.channel ? ' in units where the element has side 1, and \\(\\sigma_{12}\\propto -y\\) varies across it' : '') + '; traction \\(=\\underline{\\underline{\\sigma}}\\cdot\\underline{n}\\) at each face\'s midpoint:</p>';
+    const db = $('debrief');
+    db.innerHTML = head + '<table class="cand" aria-label="Tractions on the four faces"><tr><th>face</th><th>\\(\\underline{n}\\)</th><th>traction</th><th></th></tr>' + rows + '</table>' + r.debrief.map(s => '<p>' + s + '</p>').join('');
+    db.hidden = false;
+    $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
+    renderDots(); typeset([$('result'), db]); draw();
+  });
+  $('next').addEventListener('click', () => {
+    if (R < ROUNDS.length - 1) load(R + 1);
+    else {
+      cancelAnimationFrame(raf);
+      const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
+      $('emo').textContent = fr === 1 ? '💪' : fr >= 0.7 ? '🤝' : fr >= 0.4 ? '🧈' : '🫠'; $('emo').className = 'emo' + (fr >= 0.7 ? ' spin' : '');
+      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot;
+    }
+  });
+  $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
+
+  window.addEventListener('resize', size);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  st = fresh(); load(0);
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+  window.__fs = { get st() { return st; }, load, ROUNDS, traction, dirOf, netOf };
+})();
+</script>
+</body></html>
