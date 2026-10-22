@@ -85,6 +85,18 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 @media (prefers-reduced-motion: reduce) { .emo.spin { animation: none; } }
 .final .big { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+.real { gap: 10px; }
+.real h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.real p { margin: 0; font-size: 15px; color: var(--muted); }
+.fluids { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.fluids .choice { font-size: 14px; padding: 8px 2px; }
+.srow { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.srow input[type=range] { flex: 1; min-width: 0; accent-color: var(--flow); }
+.ticks { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+.readout { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 15.5px; align-items: baseline; }
+.readout b { font-variant-numeric: tabular-nums; }
+.readout .big2 { font-family: var(--font-display); font-size: 24px; }
+.law { font-size: 14px; color: var(--muted); }
 .foot { font-size: 13px; color: var(--muted); text-align: center; margin: 0; }
 </style>
 </head>
@@ -144,6 +156,21 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
     <div>Your total</div>
     <div class="big" id="finalScore">0</div>
     <div class="actions"><button class="primary" id="again">Play again</button></div>
+  </section>
+
+  <section class="card real" id="real" hidden>
+    <h2>Real fluids: how big is the force?</h2>
+    <p>Shear a layer of fluid and read off the force on a 1 cm² face, \(F=\mu\,\dot\gamma\,A\). Typical values, order of magnitude only.</p>
+    <div class="fluids" id="fluids" role="group" aria-label="Choose a fluid"></div>
+    <div class="srow"><span>shear rate \(\dot\gamma\)</span><input type="range" id="gdot" min="0" max="3" step="0.01" value="2" aria-label="Shear rate, log scale from 1 to 1000 per second"><b id="gval" style="min-width:5.5em;text-align:right"></b></div>
+    <div class="ticks"><span>1 s⁻¹ · settling</span><span>10 · pouring</span><span>100 · stirring</span><span>1000 · running</span></div>
+    <canvas id="bars" aria-label="Bar chart of the shear stress for each fluid at the chosen shear rate, log scale"></canvas>
+    <div class="readout">
+      <span>viscosity \(\mu\)</span><b id="rmu"></b>
+      <span>shear stress \(\mu\dot\gamma\)</span><b id="rtau"></b>
+      <span>force on 1 cm²</span><b class="big2" id="rF"></b>
+    </div>
+    <p class="law" id="rlaw"></p>
   </section>
 
   <p class="foot">MA3D1 · Chapter 2, constitutive laws: one flow, three fluids</p>
@@ -330,7 +357,7 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
   function showFinal(on) { for (const sel of ['#stage', '#brief', '#key']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
   function load(i) {
     R = i; st = fresh(); const r = ROUNDS[R];
-    $('final').hidden = true; $('card').hidden = false; showFinal(false);
+    $('final').hidden = true; $('real').hidden = true; $('card').hidden = false; showFinal(false);
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title; $('brief').innerHTML = r.brief;
     document.querySelectorAll('#faces .face, #chD .choice, #chN .choice, #chC .choice').forEach(b => { b.className = b.className.replace(/ (right|wrong)/g, ''); b.disabled = false; });
     document.querySelectorAll('#chN .choice, #chC .choice').forEach(b => b.setAttribute('aria-pressed', 'false'));
@@ -388,7 +415,7 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
       cancelAnimationFrame(raf);
       const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
       $('emo').textContent = fr === 1 ? '💪' : fr >= 0.7 ? '🤝' : fr >= 0.4 ? '🧈' : '🫠'; $('emo').className = 'emo' + (fr >= 0.7 ? ' spin' : '');
-      $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot;
+      $('card').hidden = true; $('final').hidden = false; $('real').hidden = false; realDraw(); showFinal(true); snd.final(fr); $('finalScore').textContent = tot;
     }
   });
   $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
@@ -398,6 +425,39 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
   new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   st = fresh(); load(0);
   if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(() => typeset([document.querySelector('.app')]));
+  // ---------- real fluids explorer ----------
+  // Apparent viscosity in Pa s as a function of shear rate g (1/s). Indicative values at room temperature.
+  const FLUIDS = [
+    { name: 'water', mu: g => 1e-3, law: 'Newtonian, \\(\\mu=1\\) mPa s: the stress is simply proportional to the rate of strain.' },
+    { name: 'olive oil', mu: g => 0.08, law: 'Newtonian, \\(\\mu\\approx80\\) mPa s, eighty times water.' },
+    { name: 'honey', mu: g => 10, law: 'Newtonian to a good approximation, \\(\\mu\\approx10\\) Pa s: ten thousand times water, which is why it pours so slowly.' },
+    { name: 'ketchup', mu: g => 20 * Math.pow(g, -0.7), law: 'Shear-thinning: roughly \\(\\mu\\propto\\dot\\gamma^{-0.7}\\), so it sits like a solid in the bottle and runs once you shake it. Paint and blood do the same.' },
+    { name: 'cornflour', mu: g => { const s = Math.pow(g / 40, 6); return 2 + 600 * s / (1 + s); }, law: 'Shear-thickening: around \\(\\dot\\gamma\\sim40\\,\\mathrm{s^{-1}}\\) the grains jam and \\(\\mu\\) climbs a hundredfold. Slow hands sink in; a running foot bounces off (the pre-lecture film).' }
+  ];
+  let fluid = 2;
+  const fmtSI = (v, unit) => { const a = Math.abs(v); const [m, pre] = a >= 1e3 ? [1e-3, 'k'] : a >= 1 ? [1, ''] : a >= 1e-3 ? [1e3, 'm'] : [1e6, 'μ']; const x = v * m; return (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2)) + ' ' + pre + unit; };
+  const fb = $('fluids');
+  FLUIDS.forEach((f, k) => { const b = document.createElement('button'); b.className = 'choice'; b.textContent = f.name; b.setAttribute('aria-pressed', String(k === fluid)); b.addEventListener('click', () => { fluid = k; snd.wake(); realDraw(); }); fb.append(b); });
+  $('gdot').addEventListener('input', realDraw);
+  function realDraw() {
+    if ($('real').hidden) return;
+    const g = Math.pow(10, +$('gdot').value), f = FLUIDS[fluid], mu = f.mu(g), tau = mu * g, F = tau * 1e-4, grams = F / 9.81 * 1000;
+    fb.querySelectorAll('.choice').forEach((b, k) => b.setAttribute('aria-pressed', String(k === fluid)));
+    $('gval').textContent = (g >= 100 ? g.toFixed(0) : g >= 10 ? g.toFixed(0) : g.toFixed(1)) + ' s⁻¹';
+    $('rmu').textContent = fmtSI(mu, 'Pa s'); $('rtau').textContent = fmtSI(tau, 'Pa');
+    $('rF').textContent = fmtSI(F, 'N') + ' ≈ the weight of ' + (grams >= 1000 ? (grams / 1000).toFixed(1) + ' kg' : grams >= 1 ? grams.toFixed(grams >= 10 ? 0 : 1) + ' g' : grams >= 1e-3 ? (grams * 1000).toFixed(grams * 1000 >= 10 ? 0 : 1) + ' mg' : (grams * 1e6).toFixed(0) + ' μg');
+    $('rlaw').innerHTML = '<b>' + f.name + '.</b> ' + f.law; typeset([$('rlaw')]);
+    // bars: log10 of shear stress for each fluid, 1e-3 .. 1e5 Pa
+    const c = $('bars'), ctx2 = c.getContext('2d'), dpr = window.devicePixelRatio || 1, Wb = Math.min(fb.clientWidth || 300, 520), Hb = 118;
+    c.width = Wb * dpr; c.height = Hb * dpr; c.style.width = Wb + 'px'; c.style.height = Hb + 'px'; ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const x0 = 64, x1 = Wb - 8, lo = -3, hi = 5, X = v => x0 + (Math.max(lo, Math.min(hi, Math.log10(v))) - lo) / (hi - lo) * (x1 - x0);
+    ctx2.font = '12px ' + css('--font-body'); ctx2.textAlign = 'center'; ctx2.fillStyle = css('--muted'); ctx2.strokeStyle = css('--line'); ctx2.lineWidth = 1;
+    for (let e = lo; e <= hi; e += 2) { const x = X(Math.pow(10, e)); ctx2.beginPath(); ctx2.moveTo(x, 2); ctx2.lineTo(x, Hb - 16); ctx2.stroke(); ctx2.fillText('10' + String(e).replace('-', '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]) + (e === hi ? ' Pa' : ''), x, Hb - 3); }
+    FLUIDS.forEach((f2, k) => { const y = 6 + k * 20, t = f2.mu(g) * g, sel = k === fluid;
+      ctx2.fillStyle = sel ? css('--flow') : css('--line'); ctx2.fillRect(x0, y, Math.max(2, X(t) - x0), 14);
+      ctx2.fillStyle = sel ? css('--ink') : css('--muted'); ctx2.textAlign = 'right'; ctx2.fillText(f2.name, x0 - 6, y + 11); });
+  }
+  window.addEventListener('resize', realDraw);
   window.__fs = { get st() { return st; }, load, ROUNDS, traction, dirOf, netOf };
 })();
 </script>
