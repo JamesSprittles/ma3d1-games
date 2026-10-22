@@ -8,7 +8,7 @@
 <script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']] }, svg: { fontCache: 'global' }, startup: { typeset: false } };</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
 <style>
-/* Layout: phone column. A square element sits in a flow; the student says which way the force T·n on each face points, then the net force. */
+/* Layout: phone column. A square element sits in a flow; the student says which way the force T·n on each face points, then the total force. */
 :root {
   --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202C; --muted: #566070; --line: #D5DBE4;
   --flow: #1F5FA8; --elem: #C24A00; --diag: #0B7A55; --key: #C0392B; --good: #0B7A55;
@@ -131,17 +131,17 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
       <button class="choice arrowbtn" data-d="D" aria-label="down">↓</button>
       <button class="choice arrowbtn" data-d="0" aria-label="no force">∅</button>
     </div>
-    <p class="q" id="qN">Net force on the element from the four faces?</p>
-    <div class="choices three" id="chN" role="group" aria-label="Net force">
+    <p class="q" id="qN">Total force on the element? <small>Add the four face forces as vectors: this is what would accelerate the element.</small></p>
+    <div class="choices three" id="chN" role="group" aria-label="Total force">
       <button class="choice" data-n="L" aria-pressed="false">←<br><small>to the left</small></button>
-      <button class="choice" data-n="0" aria-pressed="false">zero<br><small>they cancel</small></button>
+      <button class="choice" data-n="0" aria-pressed="false">zero<br><small>the four cancel</small></button>
       <button class="choice" data-n="R" aria-pressed="false">→<br><small>to the right</small></button>
     </div>
-    <p class="q" id="qC" hidden>Compared with the Newtonian fluid, the net force is…</p>
-    <div class="choices three" id="chC" role="group" aria-label="Net force compared with the Newtonian fluid" hidden>
-      <button class="choice" data-c="less" aria-pressed="false">smaller</button>
-      <button class="choice" data-c="same" aria-pressed="false">the same</button>
-      <button class="choice" data-c="more" aria-pressed="false">bigger</button>
+    <p class="q" id="qC" hidden>The shear rate at the top face is 3× that at the bottom. The force on the top face is… <small>(times the force on the bottom face; for the Newtonian fluid it was exactly 3×)</small></p>
+    <div class="choices three" id="chC" role="group" aria-label="Ratio of the top-face force to the bottom-face force" hidden>
+      <button class="choice" data-c="less" aria-pressed="false">less than 3×</button>
+      <button class="choice" data-c="same" aria-pressed="false">exactly 3×</button>
+      <button class="choice" data-c="more" aria-pressed="false">more than 3×</button>
     </div>
     <div class="actions">
       <button class="primary" id="go" disabled>Reveal</button>
@@ -188,22 +188,22 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
   const yc = y => 0.5 + y / 2;
   const ROUNDS = [
     Object.assign({
-      title: 'Ideal fluid', brief: 'Channel flow \\(u=1-y^2\\) between walls at \\(y=\\pm1\\); the element sits at \\(y=\\tfrac12\\) and the arrows show the flow relative to it. The fluid is <b>ideal</b> (inviscid), \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}\\), and the pressure is uniform. Which way is the force on each face, and what is the net force?',
+      title: 'Ideal fluid', brief: 'Channel flow \\(u=1-y^2\\) between walls at \\(y=\\pm1\\); the element sits at \\(y=\\tfrac12\\) and the arrows show the flow relative to it. The fluid is <b>ideal</b> (inviscid), \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}\\), and the pressure is uniform. Which way is the force on each face, and what is the total force on the element?',
       suffix: '\\,p_0', sig: () => Z(), p: () => 1,
       head: '<p>\\(\\underline{\\underline{T}}=-p_0\\,\\underline{\\underline{I}}\\), so the force per unit area on each face is \\(-p_0\\underline{n}\\):</p>',
-      debrief: ['The fluid is being sheared, but an ideal fluid does not care: with no viscosity there is no shear stress, only the pressure pushing in equally on every face, and the net force is zero. Any profile \\(u(y)\\) is a steady solution of Euler\'s equation with uniform \\(p\\): nothing in an ideal fluid lets the layers feel each other.']
+      debrief: ['The fluid is being sheared, but an ideal fluid does not care: with no viscosity there is no shear stress, only the pressure pushing in equally on every face, so the four forces cancel: no total force. Any profile \\(u(y)\\) is a steady solution of Euler\'s equation with uniform \\(p\\): nothing in an ideal fluid lets the layers feel each other.']
     }, CH),
     Object.assign({
-      title: 'Newtonian fluid', brief: 'Same flow, but now the fluid is <b>Newtonian</b>: \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}+2\\mu\\,\\underline{\\underline{e}}\\). The pressure is still uniform, so only the viscous part changes anything. Which way does each face get dragged, and is there a net force now?',
+      title: 'Newtonian fluid', brief: 'Same flow, \\(u=1-y^2\\), same element at \\(y=\\tfrac12\\), but now the fluid is <b>Newtonian</b>: \\(\\underline{\\underline{T}}=-p\\,\\underline{\\underline{I}}+2\\mu\\,\\underline{\\underline{e}}\\). The pressure is still uniform, so only the viscous part changes anything. Which way does each face get dragged, and is there a total force now?',
       suffix: '', sig: (x, y) => { const g = -yc(y); return [[0, g], [g, 0]]; }, p: () => 0,
       head: '<p>At the centre, \\(2\\mu\\,\\underline{\\underline{e}}=\\mu\\begin{pmatrix}0&-\\tfrac12\\\\-\\tfrac12&0\\end{pmatrix}\\) in units where the element has side 1, and \\(\\sigma_{12}=\\mu\\,\\partial u/\\partial y\\propto -y\\) varies across it. Viscous force per unit area \\(=2\\mu\\,\\underline{\\underline{e}}\\cdot\\underline{n}\\):</p>',
-      debrief: ['\\(\\sigma_{12}<0\\): the slower fluid above drags the top face backward, the faster fluid below pushes the bottom forward. The side faces are sheared too, down on the right and up on the left, because \\(\\sigma_{12}=\\sigma_{21}\\) (angular momentum, L09).', 'But \\(|\\sigma_{12}|\\) grows towards the wall, so the backward pull on the top wins: net viscous force \\(\\mu\\,\\partial^2 u/\\partial y^2<0\\) per unit volume, a drag. In steady flow a pressure gradient must balance it: Poiseuille flow, next lecture.']
+      debrief: ['\\(\\sigma_{12}<0\\): the slower fluid above drags the top face backward, the faster fluid below pushes the bottom forward. The side faces are sheared too, down on the right and up on the left, because \\(\\sigma_{12}=\\sigma_{21}\\) (angular momentum, L09).', 'But \\(|\\sigma_{12}|\\) grows towards the wall, so the backward pull on the top wins: total viscous force \\(\\mu\\,\\partial^2 u/\\partial y^2<0\\) per unit volume, a drag. In steady flow a pressure gradient must balance it: Poiseuille flow, next lecture.']
     }, CH),
     Object.assign({
-      title: 'Shear-thickening fluid', brief: 'Same flow once more, now in cornflour and water (the pre-lecture film): <b>shear-thickening</b>, so the viscous stress still has the form \\(2\\mu\\,\\underline{\\underline{e}}\\) but \\(\\mu\\) itself grows with the rate of strain, say \\(\\mu=\\mu_0(1+|\\partial u/\\partial y|)\\). Which way is each face dragged, and how does the net force compare with the Newtonian case?',
+      title: 'Shear-thickening fluid', brief: 'Same flow, \\(u=1-y^2\\), same element at \\(y=\\tfrac12\\), now in cornflour and water (the pre-lecture film). It is <b>shear-thickening</b>: the stress is still \\(2\\mu\\,\\underline{\\underline{e}}\\), but \\(\\mu\\) is larger where the shear rate is larger. Which way is each face dragged, and how do the top and bottom faces compare?',
       suffix: '\\,\\mu_0', compare: 'more', sig: (x, y) => { const r = yc(y), g = -r * (1 + r); return [[0, g], [g, 0]]; }, p: () => 0,
-      head: '<p>\\(\\sigma_{12}=\\mu_0\\,(1+|\\partial u/\\partial y|)\\,\\partial u/\\partial y\\): \\(-\\tfrac34\\mu_0\\) at the centre instead of \\(-\\tfrac12\\mu_0\\), and growing faster towards the wall. Viscous force per unit area on each face:</p>',
-      debrief: ['The directions do not change: they are set by the sign of \\(e_{12}\\) and the symmetry of \\(\\underline{\\underline{\\sigma}}\\), which any law of the form \\(\\sigma_{ij}=2\\mu(\\underline{\\underline{e}})\\,e_{ij}\\) keeps. What changes is the size. The top face, where the shear rate is three times that at the bottom, now feels more than three times the stress, so the net drag is bigger than for a Newtonian fluid; a shear-thinning fluid (paint, ketchup) would give a smaller one.', 'This is why the Newtonian law is a choice (L10): linear in \\(\\underline{\\underline{e}}\\), which cornflour is not.']
+      head: '<p>Taking \\(\\mu=\\mu_0(1+|\\partial u/\\partial y|)\\) for the picture, \\(\\sigma_{12}=\\mu\\,\\partial u/\\partial y\\) is \\(-\\tfrac34\\mu_0\\) at the centre instead of \\(-\\tfrac12\\mu_0\\), and grows faster towards the wall. Viscous force per unit area on each face:</p>',
+      debrief: ['The directions are the same as for the Newtonian fluid: they come from the sign of \\(e_{12}\\) and the symmetry of \\(\\underline{\\underline{\\sigma}}\\), whatever \\(\\mu\\) does. The size is different. The top face has three times the shear rate <em>and</em> a bigger \\(\\mu\\), so it feels more than three times the force (here \\(\\tfrac{3}{4}\\cdot\\tfrac{7}{4}\\) against \\(\\tfrac14\\cdot\\tfrac54\\), a ratio of 4.2). A shear-thinning fluid (paint, ketchup) would give less than 3×.', 'That is what the Newtonian law assumes away: stress linear in \\(\\underline{\\underline{e}}\\) (L10), which cornflour is not. Try the real fluids after the last round.']
     }, CH)
   ];
   const FACES = [ // name, outward normal, midpoint
@@ -335,7 +335,7 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
         const along = Math.abs(ux * F.n[0] + uy * F.n[1]) < 1e-6;
         bigArrow(ctx, along ? x - ux * L / 2 : (ux * F.n[0] + uy * F.n[1] > 0 ? x : x - ux * L), along ? y + uy * L / 2 : (ux * F.n[0] + uy * F.n[1] > 0 ? y : y + uy * L), ux, uy, L, cKey); });
     }
-    $('hint').textContent = st.phase === 'done' ? 'red: force on each face, length ∝ size' : 'blue: flow relative to the element · t = ' + st.t.toFixed(2);
+    $('hint').textContent = st.phase === 'done' ? 'red: force on each face, length ∝ size' : 'u = 1 − y², element at y = ½';
   }
   function loop(now) {
     const period = 3000, u = ((now - st.t0) % period) / 1000;
@@ -398,7 +398,7 @@ table.cand th { font-size: 13px; line-height: 1.2; font-weight: 600; color: var(
     document.querySelectorAll('#chD .choice').forEach(b => { b.disabled = true; b.setAttribute('aria-pressed', 'false'); });
     document.querySelectorAll('#chN .choice').forEach(c => { c.disabled = true; if (c.dataset.n === net) c.classList.add('right'); else if (c.dataset.n === st.n) c.classList.add('wrong'); });
     document.querySelectorAll('#chC .choice').forEach(c => { c.disabled = true; if (c.dataset.c === r.compare) c.classList.add('right'); else if (c.dataset.c === st.c) c.classList.add('wrong'); });
-    $('result').textContent = (nF === 4 ? 'All four faces right' : nF + ' of 4 faces right') + (okN ? (r.compare ? ', comparison right. ' : ', net force right. ') : (r.compare ? ', comparison wrong. ' : ', net force wrong. ')) + '+' + pts;
+    $('result').textContent = (nF === 4 ? 'All four faces right' : nF + ' of 4 faces right') + (okN ? (r.compare ? ', ratio right. ' : ', total force right. ') : (r.compare ? ', ratio wrong. ' : ', total force wrong. ')) + '+' + pts;
     $('result').className = 'result ' + (pts ? 'ok' : 'no');
     const names = ['top', 'right', 'bottom', 'left'];
     const rows = FACES.map((F, f) => '<tr><td>' + names[f] + '</td><td>\\(' + vec(F.n) + '\\)</td><td>\\(' + vec(ts[f]) + r.suffix + '\\)</td><td>' + SYM[truth[f]] + '</td></tr>').join('');
