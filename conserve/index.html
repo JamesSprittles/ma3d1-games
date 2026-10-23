@@ -168,22 +168,22 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
     },
     {
-      title: 'Cheese and onion in L4', emoji: '🍟', brief: '<ul><li>Someone at the back of L4 opens a packet of cheese and onion crisps. <b>The ventilation blows towards the front at \\(\\underline{u}\\)</b>; the smell also spreads on its own. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right).</li><li><b>Start:</b> no smell; the packet opens at \\(t=0\\).</li></ul>',
-      periodic: false, u: 0.35, tend: 3.4, init: x => 0, ymax: 1.1, D: 0.012, src: 0.12, x0: 0.12,
+      title: 'Cheese and onion in L4', emoji: '🍟', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of smell, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the smell spreads anyway. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
+      periodic: false, u: 0, tend: 3.0, init: x => 0, ymax: 1.1, D: 0.004, mass: 0.12, x0: 0.5, w0: 0.05,
       B: { ans: 0, tiles: [
         { tex: 'b = c', label: 'smell per cubic metre', ok: true },
-        { tex: 'b = c\\,\\underline{u}', label: 'smell times the air velocity', why: 'that is the advective flux, not the density.' },
-        { tex: 'b = \\int c\\,dV', label: 'the total smell in the room', why: 'that is the total \\(B\\), not its density.' } ] },
+        { tex: 'b = \\int c\\,dV', label: 'the total smell in the room', why: 'that is the total \\(B\\), not its density.' },
+        { tex: 'b = c\\,\\underline{x}', label: 'smell times position', why: 'that is a moment of the smell, not an amount per unit volume.' } ] },
       Q: { ans: 0, tiles: [
-        { tex: 'q^B = s\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the packet releases smell at one seat', ok: true, q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? r.src / 0.05 : 0 },
-        { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'the packet is a source inside the room.', q: () => 0 },
-        { tex: 'q^B = -\\nabla\\cdot(c\\,\\underline{u})', label: 'smell carried away by the draught', why: 'transport again, already on the left; here it cancels the draught, and with no packet term nothing appears.', q: 'cancel' } ] },
+        { tex: 'q^B = m\\,\\delta(\\underline{x}-\\underline{x}_0)\\,\\delta(t)', label: 'one puff, at the bag, at \\(t=0\\)', ok: true, puff: true, q: () => 0 },
+        { tex: 'q^B = m\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the bag keeps giving off smell', why: 'the bag popped once; this pumps smell in for ever, so the peak never falls.', q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? 0.5 * r.mass / 0.05 : 0 },
+        { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'then where did the smell come from? Nothing appears.', q: () => 0 } ] },
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = D\\nabla c', label: 'smell spreads from where there is more to where there is less', ok: true, T: 'dif' },
         { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'sign trap: \\(\\underline{h}^B\\) is what <em>enters</em>, so it is \\(+D\\,\\partial c/\\partial n\\). With the minus sign smell runs uphill and blows up.', T: 'antidif' },
-        { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'in still air you would still smell them: diffusion.', T: 0 } ] },
-      solved: '\\(\\partial_t c+u\\,\\partial_x c=s\\,\\delta(x-x_0)+D\\,\\partial_{xx}c\\), \\(u=0.35\\), \\(D=0.012\\), \\(x_0=0.12\\), \\(0\\le x\\le1\\), \\(c=0\\) in at the back, outflow at the front, \\(c(x,0)=0\\)',
-      debrief: ['\\(\\partial c/\\partial t+\\nabla\\cdot(c\\underline{u})=s\\,\\delta(\\underline{x}-\\underline{x}_0)+D\\nabla^2c\\): advection, source, diffusion. The Chapter 2 pollutant example.', 'Sign: \\(\\underline{h}^B\\) counts what comes <em>in</em>, so the flux is \\(+D\\nabla c\\); Fick\'s usual \\(\\underline{j}=-D\\nabla c\\) is what goes <em>out</em>.']
+        { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'the air is still, so the smell would stay on the seat for ever. Diffusion moves it.', T: 0 } ] },
+      solved: '\\(\\partial_t c=D\\,\\partial_{xx}c\\) for \\(t>0\\), \\(D=0.004\\), \\(c\\to0\\) far away, starting from the puff: a narrow Gaussian of mass \\(m=0.12\\) at \\(x_0=0.5\\) (width \\(0.05\\))',
+      debrief: ['\\(\\partial c/\\partial t=m\\,\\delta(\\underline{x}-\\underline{x}_0)\\delta(t)+D\\nabla^2c\\): with \\(\\underline{u}=\\underline{0}\\), the diffusion (heat) equation.', 'In 1D the puff becomes \\(c=\\dfrac{m}{\\sqrt{4\\pi Dt}}\\,e^{-(x-x_0)^2/4Dt}\\): a Gaussian, width \\(\\propto\\sqrt{Dt}\\), height \\(\\propto1/\\sqrt{t}\\), area fixed.', 'Sign: \\(\\underline{h}^B\\) counts what comes <em>in</em>, so the flux is \\(+D\\nabla c\\); Fick\'s usual \\(\\underline{j}=-D\\nabla c\\) is what goes <em>out</em>.']
     }
   ];
 
@@ -246,7 +246,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     const q = qt.q === 'cancel' ? '-u\\,\\partial_x ' + v : qt.tex.replace(/^.*?=\s*/, '').replace('h', '(1-z)').replace('\\underline{x}-\\underline{x}_0', 'x-x_0').replace('\\underline{u}', 'u');
     const T = tt.T === 0 ? '' : tt.T === 'adv' ? '+u\\,\\partial_x ' + v : tt.T === 'dif' ? '+D\\,\\partial_{xx}' + v : '-D\\,\\partial_{xx}' + v;
     const rhs = (q === '0' && T) ? T.replace(/^\+/, '') : q + T;
-    return '\\(\\partial_t ' + v + '+u\\,\\partial_x ' + v + '=' + rhs + '\\)';
+    return '\\(\\partial_t ' + v + (r.u ? '+u\\,\\partial_x ' + v : '') + '=' + rhs + '\\)';
   }
   // ---------- 1D strip model ----------
   const N = 64;
@@ -258,6 +258,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     for (let j = 0; j < M; j++) { xi[j] = lo + (j + 0.5) * dx; B[j] = (xi[j] >= 0 && xi[j] <= 1) ? r.init(xi[j]) : 0; }
     const qt = r.Q.tiles[picks.Q], tt = r.T.tiles[picks.T];
     const ueff = tt.T === 'adv' ? 2 * r.u : qt.q === 'cancel' ? 0 : r.u;
+    if (qt.puff) for (let j = 0; j < M; j++) B[j] += r.mass / (Math.sqrt(2 * Math.PI) * r.w0) * Math.exp(-(((xi[j] - r.x0) / r.w0) ** 2) / 2); // the puff at t = 0
     const s = { B, xi, dx, lo, M, per, b: new Float64Array(N), x: new Float64Array(N), t: 0, shift: 0, u: r.u, ueff, q: qt.q, T: tt.T, blown: false, r };
     for (let i = 0; i < N; i++) s.x[i] = (i + 0.5) * dx;
     sample(s); return s;
@@ -308,9 +309,9 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     for (let i = 2; i < N - 3; i += 6) { const v = Math.max(0, s.b[i]) / r.ymax; if (v < 0.03) continue; const sz = 9 + 17 * Math.min(1, v); ctx.font = sz + 'px system-ui'; ctx.fillText(r.emoji, X(i), Y(s.b[i]) - 2); }
     if (s.blown) { ctx.font = '28px system-ui'; ctx.fillText('💥', (x0 + x1) / 2, (top + base) / 2 + 10); ctx.font = '600 13px ' + css('--font-body'); ctx.fillStyle = css('--key'); ctx.fillText('blows up', (x0 + x1) / 2, (top + base) / 2 + 30); }
     // direction of u
-    ctx.fillStyle = css('--flow'); ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText('u →   t = ' + s.t.toFixed(2), x1, y0 + 12);
+    ctx.fillStyle = css('--flow'); ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText((r.u ? 'u →   ' : 'still air   ') + 't = ' + s.t.toFixed(2), x1, y0 + 12);
     if (r.periodic) { ctx.fillStyle = css('--muted'); ctx.textAlign = 'center'; ctx.fillText('one lap: off the right end → back in at the left', (x0 + x1) / 2, base + 13); }
-    else { ctx.fillStyle = css('--muted'); ctx.textAlign = 'left'; ctx.fillText(R === 2 ? 'back row' : 'start', x0, base + 13); ctx.textAlign = 'right'; ctx.fillText(R === 2 ? 'lecturer' : 'far side', x1, base + 13); }
+    else { ctx.fillStyle = css('--muted'); ctx.textAlign = 'left'; ctx.fillText(R === 2 ? 'back row' : 'start', x0, base + 13); ctx.textAlign = 'right'; ctx.fillText(R === 2 ? 'lecturer' : 'far side', x1, base + 13); if (R === 2) { ctx.textAlign = 'center'; ctx.fillText('bag', x0 + r.x0 * (x1 - x0), base + 13); } }
   }
   function draw() {
     ctx.clearRect(0, 0, W, H);
@@ -375,7 +376,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<li><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</li>'); }
     $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts; $('result').className = 'result ' + (pts ? 'ok' : 'no');
     const yoursTex = lawTex({ Q: st.pick.Q, T: st.pick.T }, r), sameLaw = st.pick.Q === r.Q.ans && st.pick.T === r.T.ans;
-    const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same \\(u\\), ends and start</li>') + '<li>64 cells; transport done exactly in the frame moving with \\(u\\), diffusion and sources by finite differences; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
+    const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, ' + (r.u ? '\\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)' : '\\(\\underline{u}=\\underline{0}\\), so no transport term') + '):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same ' + (r.u ? '\\(u\\), ' : '') + 'ends and start</li>') + '<li>64 cells; ' + (r.u ? 'transport done exactly in the frame moving with \\(u\\), ' : '') + 'diffusion and sources by finite differences; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
     // run both laws
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
