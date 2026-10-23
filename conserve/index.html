@@ -99,10 +99,10 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     <canvas id="cv" role="img" aria-label="Two strips: the quantity evolving under your law, and under the correct law"></canvas>
   </div>
 
-  <div class="key" id="key"><b>Your job:</b> fill the three slots. Transport by the flow, \(\nabla\cdot(b\,\underline{u})\), is already there.<ul><li>\(b\): what is conserved, per unit volume</li><li>\(q^B\): made or destroyed inside?</li><li>\(\underline{T}^B\): crosses the boundary other than by being carried?</li></ul></div>
+  <div class="key" id="key"><b>Your job:</b> fill the three slots. Transport by the flow, \(\nabla\cdot(b\,\underline{u})\), is already there.<ul><li>\(b\): what we are counting, per unit volume</li><li>\(q^B\): made or destroyed inside?</li><li>\(\underline{T}^B\): crosses the boundary other than by being carried?</li></ul></div>
 
   <section class="card" id="card">
-    <p class="q" id="qb">1. \(b\): what is conserved? <small>per unit volume</small></p>
+    <p class="q" id="qb">1. \(b\): what are we counting? <small>the amount per unit volume, whose rate of change the law gives</small></p>
     <div class="choices" id="chB" role="group" aria-label="Choose b"></div>
     <p class="q" id="qq">2. \(q^B\): created or destroyed inside? <small>\(0\) if it can only change by crossing the boundary</small></p>
     <div class="choices" id="chQ" role="group" aria-label="Choose the volume source"></div>
@@ -168,7 +168,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.']
     },
     {
-      title: 'Crisps in the lecture theatre', emoji: '🍟', brief: '<ul><li>Someone at the back opens a packet of crisps. <b>The ventilation blows towards the front at \\(\\underline{u}\\)</b>; the smell also spreads on its own. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> back row (left) to lecturer (right).</li><li><b>Start:</b> no smell; the packet opens at \\(t=0\\).</li></ul>',
+      title: 'Cheese and onion in L4', emoji: '🍟', brief: '<ul><li>Someone at the back of L4 opens a packet of cheese and onion crisps. <b>The ventilation blows towards the front at \\(\\underline{u}\\)</b>; the smell also spreads on its own. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right).</li><li><b>Start:</b> no smell; the packet opens at \\(t=0\\).</li></ul>',
       periodic: false, u: 0.35, tend: 3.4, init: x => 0, ymax: 1.1, D: 0.012, src: 0.12, x0: 0.12,
       B: { ans: 0, tiles: [
         { tex: 'b = c', label: 'smell per cubic metre', ok: true },
