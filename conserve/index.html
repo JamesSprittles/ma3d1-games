@@ -43,7 +43,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
 .brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
 .brief b { color: var(--ink); }
-.key { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+.key { margin: 0; font-size: 14.5px; color: var(--muted); text-align: left; }
+.key b { color: var(--ink); }
 .law { margin: 0; text-align: center; font-size: 16px; padding: 6px 4px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); min-height: 40px; }
 .law .slot { display: inline-block; min-width: 2.2em; border-bottom: 2px dashed var(--muted); color: var(--muted); font-size: 13px; vertical-align: baseline; padding: 0 3px; }
 .law .slot.filled { border-bottom-color: var(--ink); color: var(--ink); font-size: 16px; }
@@ -96,14 +97,14 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     <canvas id="cv" role="img" aria-label="Two strips: the quantity evolving under your law, and under the correct law"></canvas>
   </div>
 
-  <p class="key" id="key">L07: \(\dfrac{\partial b}{\partial t}+\nabla\cdot(b\,\underline{u})=q^B+\nabla\cdot\underline{T}^B\). \(b\) per unit volume, \(q^B\) made or destroyed inside, \(\underline{h}^B=\underline{T}^B\cdot\underline{n}\) what enters through the boundary.</p>
+  <p class="key" id="key"><b>Your job:</b> fill the three slots of the L07 template for this quantity. The transport term \(\nabla\cdot(b\,\underline{u})\), being carried along by the flow, is already there. You choose \(b\) (what is being conserved, per unit volume), \(q^B\) (is any made or destroyed inside?) and \(\underline{T}^B\) (does any cross the boundary other than by being carried?).</p>
 
   <section class="card" id="card">
-    <p class="q" id="qb">\(b\): the density <small>(the amount per unit volume)</small></p>
+    <p class="q" id="qb">1. \(b\): what is conserved? <small>The amount per unit volume, so that \(\int_\Omega b\,dV\) is the total.</small></p>
     <div class="choices" id="chB" role="group" aria-label="Choose b"></div>
-    <p class="q" id="qq">\(q^B\): the volume source <small>(made or destroyed inside, per unit volume per unit time)</small></p>
+    <p class="q" id="qq">2. \(q^B\): is any created or destroyed inside \(\Omega\)? <small>Rate per unit volume. Choose \(0\) if the amount can only change by crossing the boundary.</small></p>
     <div class="choices" id="chQ" role="group" aria-label="Choose the volume source"></div>
-    <p class="q" id="qt">\(\underline{T}^B\): the extra flux <small>(what enters through the boundary, beyond being carried along by \(\underline{u}\))</small></p>
+    <p class="q" id="qt">3. \(\underline{T}^B\): does any cross the boundary other than by being carried with the flow? <small>\(\underline{h}^B=\underline{T}^B\cdot\underline{n}\) is the rate <em>entering</em> per unit area. Choose \(\underline{0}\) if being carried by \(\underline{u}\) is the only way across.</small></p>
     <div class="choices" id="chT" role="group" aria-label="Choose the flux"></div>
     <div class="actions">
       <button class="primary" id="go" disabled>Run it</button>
@@ -129,7 +130,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx, upwind advection, explicit diffusion.
   const ROUNDS = [
     {
-      title: 'Emperor penguins', emoji: '🐧', brief: 'A huddle of emperor penguins shuffles slowly round and round through the night (<b>the whole huddle moves with velocity \\(\\underline{u}\\)</b>). Build the conservation law for the penguins. The strip below is one lap of the huddle: it wraps round.',
+      title: 'Emperor penguins', emoji: '🐧', brief: 'A huddle of emperor penguins shuffles slowly round and round through the night (<b>the whole huddle moves with velocity \\(\\underline{u}\\)</b>). Build the conservation law for the penguins.<br><b>The picture:</b> one lap of the huddle, straightened out into a strip, so what shuffles off the right-hand end comes back in at the left. <b>At the start</b> the penguins are spread evenly with one denser clump.',
       periodic: true, u: 1, tend: 3.2, init: x => 0.5 + 0.45 * Math.exp(-(((x - 0.3) / 0.12) ** 2)), ymax: 1.4, D: 0.004,
       B: { ans: 0, tiles: [
         { tex: 'b = n', label: 'penguins per square metre', ok: true },
@@ -143,10 +144,11 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
         { tex: '\\underline{T}^B = \\underline{0}', label: 'penguins only move with the huddle', ok: true, T: 0 },
         { tex: '\\underline{T}^B = n\\,\\underline{u}', label: 'penguins carried through the boundary', why: 'that flux is the \\(\\nabla\\cdot(b\\underline{u})\\) term already, so you have counted it twice: the huddle goes round at double speed.', T: 'adv' },
         { tex: '\\underline{T}^B = D\\nabla n', label: 'penguins shuffle randomly relative to the huddle', why: 'defensible for a loose crowd, but this huddle moves as one body. A diffusion flux smears the dense patch out.', T: 'dif', soft: true } ] },
+      solved: '\\(\\partial_t n+u\\,\\partial_x n=0\\) with \\(u=1\\), on \\(0\\le x\\le1\\) with periodic ends, from \\(n(x,0)=\\tfrac12+0.45\\,e^{-((x-0.3)/0.12)^2}\\).',
       debrief: ['\\(\\partial n/\\partial t+\\nabla\\cdot(n\\underline{u})=0\\): pure conservation, the same equation as mass with \\(\\rho\\to n\\). Nothing is made, nothing crosses the boundary except by being carried.', 'The sting: if the huddle is packed solid so \\(n\\) is constant, the equation says \\(\\nabla\\cdot\\underline{u}=0\\). Incompressible penguins: the huddle can rotate and shear but not squash.']
     },
     {
-      title: 'Zombie outbreak', emoji: '🧟', brief: 'One zombie joins a crowd walking across campus (<b>everyone, zombie or not, walks with the crowd at \\(\\underline{u}\\)</b>). A zombie bites humans it meets and turns them. Build the conservation law for zombies, \\(z\\) per square metre, with humans \\(h\\) per square metre.',
+      title: 'Zombie outbreak', emoji: '🧟', brief: 'One zombie joins a crowd walking across campus (<b>everyone, zombie or not, walks with the crowd at \\(\\underline{u}\\)</b>). A zombie bites humans it meets and turns them. Build the conservation law for zombies, \\(z\\) per square metre, with humans \\(h\\) per square metre.<br><b>The picture:</b> the crowd\'s path across campus; the crowd walks in at the left and out at the right. <b>At the start</b> there is one small knot of zombies near the back of the crowd.',
       periodic: false, u: 0.5, tend: 2.4, init: x => 0.08 * Math.exp(-(((x - 0.1) / 0.05) ** 2)), ymax: 1.1, D: 0.004, beta: 6,
       B: { ans: 0, tiles: [
         { tex: 'b = z', label: 'zombies per square metre', ok: true },
@@ -160,10 +162,11 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
         { tex: '\\underline{T}^B = \\underline{0}', label: 'zombies move with the crowd, nothing else', ok: true, T: 0 },
         { tex: '\\underline{T}^B = z\\,\\underline{u}', label: 'zombies walking in through the boundary', why: 'already counted on the left: the zombies now advance at twice the crowd\'s speed.', T: 'adv' },
         { tex: '\\underline{T}^B = -D\\nabla z', label: 'zombies spread out', why: 'two errors: the scenario says they move with the crowd, and the sign is backwards (\\(\\underline{h}^B\\) is what enters, so diffusion is \\(+D\\nabla z\\)). With a minus sign the zombies clump: anti-diffusion, which blows up.', T: 'antidif' } ] },
+      solved: '\\(\\partial_t z+u\\,\\partial_x z=\\beta z(1-z)\\) with \\(u=0.5\\), \\(\\beta=6\\), on \\(0\\le x\\le1\\): \\(z=0\\) entering at the left, free outflow at the right, from \\(z(x,0)=0.08\\,e^{-((x-0.1)/0.05)^2}\\).',
       debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\). The transport is on the left; the physics, bites, is the volume source on the right. With \\(h=1-z\\) the source is logistic, \\(\\beta z(1-z)\\): exponential at first, saturating when the crowd is all zombie.', 'Same template as mass and momentum: only \\(q^B\\) and \\(\\underline{T}^B\\) carry the physics (L07, last board).']
     },
     {
-      title: 'Crisps in the lecture theatre', emoji: '🍟', brief: 'Someone at the back opens a packet of crisps. <b>The ventilation blows air gently towards the front at \\(\\underline{u}\\)</b>, and the smell also spreads on its own. Build the conservation law for the smell, concentration \\(c\\) (smell per cubic metre). The strip runs from the back row (left) to the lecturer (right).',
+      title: 'Crisps in the lecture theatre', emoji: '🍟', brief: 'Someone at the back opens a packet of crisps. <b>The ventilation blows air gently towards the front at \\(\\underline{u}\\)</b>, and the smell also spreads on its own. Build the conservation law for the smell, concentration \\(c\\) (smell per cubic metre).<br><b>The picture:</b> the theatre from the back row (left) to the lecturer (right); the draught blows left to right. <b>At the start</b> there is no smell anywhere; the packet opens at \\(t=0\\).',
       periodic: false, u: 0.35, tend: 3.4, init: x => 0, ymax: 1.1, D: 0.012, src: 0.12, x0: 0.12,
       B: { ans: 0, tiles: [
         { tex: 'b = c', label: 'smell per cubic metre', ok: true },
@@ -177,6 +180,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
         { tex: '\\underline{T}^B = D\\nabla c', label: 'smell spreads from where there is more to where there is less', ok: true, T: 'dif' },
         { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'a sign trap. \\(\\underline{h}^B=\\underline{T}^B\\cdot\\underline{n}\\) is the rate at which smell <em>enters</em>, so with \\(\\underline{n}\\) outward it is \\(+D\\,\\partial c/\\partial n\\): smell comes in where there is more outside. With the minus sign smell runs uphill and blows up.', T: 'antidif' },
         { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'in still air you would still smell them eventually: molecules spread by diffusion as well as being carried.', T: 0 } ] },
+      solved: '\\(\\partial_t c+u\\,\\partial_x c=s\\,\\delta(x-x_0)+D\\,\\partial_{xx}c\\) with \\(u=0.35\\), \\(D=0.012\\), \\(x_0=0.12\\), on \\(0\\le x\\le1\\): \\(c=0\\) entering at the back, free outflow at the front, from \\(c(x,0)=0\\).',
       debrief: ['\\(\\partial c/\\partial t+\\nabla\\cdot(c\\underline{u})=s\\,\\delta(\\underline{x}-\\underline{x}_0)+D\\nabla^2c\\): advection, a source, and Fick\'s diffusion flux. Chapter 2\'s pollutant example, and the template for Problem Sheet 3.', 'The sign of the flux is set by the convention, not the physics: in the notes \\(\\underline{h}^B\\) counts what comes <em>in</em>. Fick\'s law in its usual form, \\(\\underline{j}=-D\\nabla c\\), is the flux going <em>out</em>; same law, opposite bookkeeping.']
     }
   ];
@@ -186,7 +190,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let R = 0, st, results = ROUNDS.map(() => null), raf = 0;
   $('max').textContent = ROUNDS.length * 10;
-  function fresh() { return { phase: 'build', pick: { B: null, Q: null, T: null }, sim: null }; }
+  function fresh() { return { phase: 'build', pick: { B: null, Q: null, T: null }, sim: null, init: null }; }
   function typeset(els) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(els).catch(() => {}); }
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -234,6 +238,14 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   }
   function paintLaw(mode) { $('law').innerHTML = lawHTML(mode); typeset([$('law')]); }
 
+  // the 1D form of a chosen law, for the debrief
+  function lawTex(picks, r) {
+    const qt = r.Q.tiles[picks.Q], tt = r.T.tiles[picks.T], v = r.B.tiles[0].tex.replace(/^.*?=\s*/, '');
+    const q = qt.q === 'cancel' ? '-u\\,\\partial_x ' + v : qt.tex.replace(/^.*?=\s*/, '').replace('h', '(1-z)').replace('\\underline{x}-\\underline{x}_0', 'x-x_0').replace('\\underline{u}', 'u');
+    const T = tt.T === 0 ? '' : tt.T === 'adv' ? '+u\\,\\partial_x ' + v : tt.T === 'dif' ? '+D\\,\\partial_{xx}' + v : '-D\\,\\partial_{xx}' + v;
+    const rhs = (q === '0' && T) ? T.replace(/^\+/, '') : q + T;
+    return '\\(\\partial_t ' + v + '+u\\,\\partial_x ' + v + '=' + rhs + '\\)';
+  }
   // ---------- 1D strip model ----------
   const N = 64;
   function makeSim(r, picks) {
@@ -263,7 +275,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   let W = 300, H = 240;
   function size() {
     const maxW = Math.min(stage.parentElement.clientWidth - 24, 440);
-    W = Math.round(maxW); H = Math.round(Math.min(260, Math.max(200, window.innerHeight * 0.3)));
+    W = Math.round(maxW); H = st.sim ? Math.round(Math.min(260, Math.max(200, window.innerHeight * 0.3))) : 120;
     const dpr = window.devicePixelRatio || 1;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
@@ -281,13 +293,13 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     for (let i = 2; i < N - 3; i += 6) { const v = Math.max(0, s.b[i]) / r.ymax; if (v < 0.03) continue; const sz = 9 + 17 * Math.min(1, v); ctx.font = sz + 'px system-ui'; ctx.fillText(r.emoji, X(i), Y(s.b[i]) - 2); }
     if (s.blown) { ctx.font = '28px system-ui'; ctx.fillText('💥', (x0 + x1) / 2, (top + base) / 2 + 10); ctx.font = '600 13px ' + css('--font-body'); ctx.fillStyle = css('--key'); ctx.fillText('blows up', (x0 + x1) / 2, (top + base) / 2 + 30); }
     // direction of u
-    ctx.fillStyle = css('--flow'); ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText('u →', x1, y0 + 12);
-    if (r.periodic) { ctx.fillStyle = css('--muted'); ctx.textAlign = 'center'; ctx.fillText('↻ wraps round', (x0 + x1) / 2, base + 13); }
+    ctx.fillStyle = css('--flow'); ctx.font = '600 12px ' + css('--font-body'); ctx.textAlign = 'right'; ctx.fillText('u →   t = ' + s.t.toFixed(2), x1, y0 + 12);
+    if (r.periodic) { ctx.fillStyle = css('--muted'); ctx.textAlign = 'center'; ctx.fillText('one lap: off the right end → back in at the left', (x0 + x1) / 2, base + 13); }
     else { ctx.fillStyle = css('--muted'); ctx.textAlign = 'left'; ctx.fillText(R === 2 ? 'back row' : 'start', x0, base + 13); ctx.textAlign = 'right'; ctx.fillText(R === 2 ? 'lecturer' : 'far side', x1, base + 13); }
   }
   function draw() {
     ctx.clearRect(0, 0, W, H);
-    if (!st.sim) return;
+    if (!st.sim) { if (st.init) panel(0, H, st.init, 'the start, t = 0 (initial condition)', css('--muted')); return; }
     const h = H / 2;
     panel(0, h, st.sim.yours, 'your law', css('--elem'));
     ctx.strokeStyle = css('--line'); ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(W, h); ctx.stroke();
@@ -327,12 +339,13 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   function showFinal(on) { for (const sel of ['#stage', '#brief', '#key', '#law']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
   function load(i) {
     R = i; st = fresh(); const r = ROUNDS[R]; cancelAnimationFrame(raf);
-    $('final').hidden = true; $('card').hidden = false; showFinal(false); $('stage').hidden = true;
+    $('final').hidden = true; $('card').hidden = false; showFinal(false); $('stage').hidden = false;
+    st.init = makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans });
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title + ' ' + r.emoji; $('brief').innerHTML = r.brief;
     tiles(r.B, 'B', $('chB')); tiles(r.Q, 'Q', $('chQ')); tiles(r.T, 'T', $('chT'));
     $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
     $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
-    paintLaw('build'); renderDots(); typeset([$('brief'), $('key'), $('chB'), $('chQ'), $('chT'), $('qb'), $('qq'), $('qt')]);
+    paintLaw('build'); renderDots(); size(); typeset([$('brief'), $('key'), $('chB'), $('chQ'), $('chT'), $('qb'), $('qq'), $('qt')]);
   }
   $('go').addEventListener('click', () => {
     if (st.phase !== 'build' || st.pick.B === null || st.pick.Q === null || st.pick.T === null) return;
@@ -346,7 +359,8 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     const whys = [];
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<p><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</p>'); }
     $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts; $('result').className = 'result ' + (pts ? 'ok' : 'no');
-    const db = $('debrief'); db.innerHTML = whys.join('') + r.debrief.map(s => '<p>' + s + '</p>').join(''); db.hidden = false;
+    const yoursTex = lawTex({ Q: st.pick.Q, T: st.pick.T }, r), sameLaw = st.pick.Q === r.Q.ans && st.pick.T === r.T.ans;
+    const db = $('debrief'); db.innerHTML = whys.join('') + r.debrief.map(s => '<p>' + s + '</p>').join('') + '<p><b>What the strip actually solves.</b> One space dimension, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\). The notes\' law: ' + r.solved + (sameLaw ? '' : ' Your law instead: ' + yoursTex + ', same \\(u\\), ends and start.') + ' Finite differences, 64 cells, upwind for the transport term; the clip shows \\(t\\) from 0 to ' + r.tend + ' and repeats.</p>'; db.hidden = false;
     // run both laws
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
@@ -367,7 +381,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   });
   $('again').addEventListener('click', () => { results = ROUNDS.map(() => null); load(0); });
 
-  window.addEventListener('resize', () => { if (st.sim) size(); });
+  window.addEventListener('resize', size);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
   new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   st = fresh(); load(0);
