@@ -137,7 +137,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       B: { ans: 0, tiles: [
         { tex: 'b = n', label: 'penguins per square metre', ok: true },
         { tex: 'b = N', label: 'the total number of penguins in the huddle', why: 'that is the total \\(B\\); \\(b\\) is per unit area, \\(\\int b\\,dA=N\\).' },
-        { tex: 'b = n\\,\\underline{u}', label: 'penguins times their velocity', why: 'that is the penguin momentum, a different conserved quantity.' } ] },
+        { tex: 'b = n\\,\\underline{u}', label: 'penguins times their velocity', why: 'that is the penguin momentum, a different quantity.' } ] },
       Q: { ans: 0, tiles: [
         { tex: 'q^B = 0', label: 'no penguin appears or vanishes overnight', ok: true, q: () => 0 },
         { tex: 'q^B = -\\alpha n', label: 'penguins get cold and leave', why: 'nobody leaves a huddle at \\(-40^\\circ\\)C; a sink makes penguins vanish.', q: b => -0.6 * b },
@@ -165,7 +165,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
         { tex: '\\underline{T}^B = z\\,\\underline{u}', label: 'zombies walking in through the boundary', why: 'counted twice: zombies at double the crowd\'s speed.', T: 'adv' },
         { tex: '\\underline{T}^B = -D\\nabla z', label: 'zombies spread out', why: 'they move with the crowd; and the sign is backwards (\\(\\underline{h}^B\\) enters, so diffusion is \\(+D\\nabla z\\)): anti-diffusion blows up.', T: 'antidif' } ] },
       solved: '\\(\\partial_t z+u\\,\\partial_x z=\\beta z(1-z)\\), \\(u=0.5\\), \\(\\beta=6\\), \\(0\\le x\\le1\\), \\(z=0\\) in at the left, outflow at the right, \\(z(x,0)=0.08\\,e^{-((x-0.1)/0.05)^2}\\)',
-      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.']
+      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
     },
     {
       title: 'Cheese and onion in L4', emoji: '🍟', brief: '<ul><li>Someone at the back of L4 opens a packet of cheese and onion crisps. <b>The ventilation blows towards the front at \\(\\underline{u}\\)</b>; the smell also spreads on its own. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right).</li><li><b>Start:</b> no smell; the packet opens at \\(t=0\\).</li></ul>',
