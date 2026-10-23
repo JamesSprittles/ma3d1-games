@@ -43,6 +43,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 h1 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
 .brief { margin: 0; color: var(--muted); font-size: 15.5px; min-width: 0; }
 .brief b { color: var(--ink); }
+.brief ul, .key ul, .debrief ul { margin: 0; padding-left: 1.1em; }
+.brief li, .key li, .debrief li { margin: 2px 0; }
 .key { margin: 0; font-size: 14.5px; color: var(--muted); text-align: left; }
 .key b { color: var(--ink); }
 .law { margin: 0; text-align: center; font-size: 16px; padding: 6px 4px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); min-height: 40px; }
@@ -89,7 +91,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     <div class="score" aria-live="polite">Score <b id="total">0</b> / <span id="max"></span> <button class="sndbtn" id="sndBtn" type="button">🔊</button></div>
   </div>
   <h1 id="title"></h1>
-  <p class="brief" id="brief"></p>
+  <div class="brief" id="brief"></div>
 
   <p class="law" id="law" aria-live="polite"></p>
 
@@ -97,14 +99,14 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     <canvas id="cv" role="img" aria-label="Two strips: the quantity evolving under your law, and under the correct law"></canvas>
   </div>
 
-  <p class="key" id="key"><b>Your job:</b> fill the three slots of the L07 template for this quantity. The transport term \(\nabla\cdot(b\,\underline{u})\), being carried along by the flow, is already there. You choose \(b\) (what is being conserved, per unit volume), \(q^B\) (is any made or destroyed inside?) and \(\underline{T}^B\) (does any cross the boundary other than by being carried?).</p>
+  <div class="key" id="key"><b>Your job:</b> fill the three slots. Transport by the flow, \(\nabla\cdot(b\,\underline{u})\), is already there.<ul><li>\(b\): what is conserved, per unit volume</li><li>\(q^B\): made or destroyed inside?</li><li>\(\underline{T}^B\): crosses the boundary other than by being carried?</li></ul></div>
 
   <section class="card" id="card">
-    <p class="q" id="qb">1. \(b\): what is conserved? <small>The amount per unit volume, so that \(\int_\Omega b\,dV\) is the total.</small></p>
+    <p class="q" id="qb">1. \(b\): what is conserved? <small>per unit volume</small></p>
     <div class="choices" id="chB" role="group" aria-label="Choose b"></div>
-    <p class="q" id="qq">2. \(q^B\): is any created or destroyed inside \(\Omega\)? <small>Rate per unit volume. Choose \(0\) if the amount can only change by crossing the boundary.</small></p>
+    <p class="q" id="qq">2. \(q^B\): created or destroyed inside? <small>\(0\) if it can only change by crossing the boundary</small></p>
     <div class="choices" id="chQ" role="group" aria-label="Choose the volume source"></div>
-    <p class="q" id="qt">3. \(\underline{T}^B\): does any cross the boundary other than by being carried with the flow? <small>\(\underline{h}^B=\underline{T}^B\cdot\underline{n}\) is the rate <em>entering</em> per unit area. Choose \(\underline{0}\) if being carried by \(\underline{u}\) is the only way across.</small></p>
+    <p class="q" id="qt">3. \(\underline{T}^B\): crosses the boundary other than by being carried? <small>\(\underline{T}^B\cdot\underline{n}\) = rate <em>entering</em> per unit area; \(\underline{0}\) if the flow is the only way across</small></p>
     <div class="choices" id="chT" role="group" aria-label="Choose the flux"></div>
     <div class="actions">
       <button class="primary" id="go" disabled>Run it</button>
@@ -130,58 +132,58 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx, upwind advection, explicit diffusion.
   const ROUNDS = [
     {
-      title: 'Emperor penguins', emoji: '🐧', brief: 'A huddle of emperor penguins shuffles slowly round and round through the night (<b>the whole huddle moves with velocity \\(\\underline{u}\\)</b>). Build the conservation law for the penguins.<br><b>The picture:</b> one lap of the huddle, straightened out into a strip, so what shuffles off the right-hand end comes back in at the left. <b>At the start</b> the penguins are spread evenly with one denser clump.',
+      title: 'Emperor penguins', emoji: '🐧', brief: '<ul><li>A huddle of emperor penguins shuffles round and round all night: <b>every penguin moves with the huddle, velocity \\(\\underline{u}\\)</b>.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
       periodic: true, u: 1, tend: 3.2, init: x => 0.5 + 0.45 * Math.exp(-(((x - 0.3) / 0.12) ** 2)), ymax: 1.4, D: 0.004,
       B: { ans: 0, tiles: [
         { tex: 'b = n', label: 'penguins per square metre', ok: true },
-        { tex: 'b = N', label: 'the total number of penguins in the huddle', why: '\\(N\\) is the total, \\(B\\) in the notes\' language; \\(b\\) must be the amount per unit area so that \\(\\int b\\,dA=N\\).' },
+        { tex: 'b = N', label: 'the total number of penguins in the huddle', why: 'that is the total \\(B\\); \\(b\\) is per unit area, \\(\\int b\\,dA=N\\).' },
         { tex: 'b = n\\,\\underline{u}', label: 'penguins times their velocity', why: 'that is the penguin momentum, a different conserved quantity.' } ] },
       Q: { ans: 0, tiles: [
         { tex: 'q^B = 0', label: 'no penguin appears or vanishes overnight', ok: true, q: () => 0 },
-        { tex: 'q^B = -\\alpha n', label: 'penguins get cold and leave', why: 'nobody leaves an emperor huddle at \\(-40^\\circ\\)C. A sink here makes penguins vanish from the inside.', q: b => -0.6 * b },
-        { tex: 'q^B = n\\,\\underline{u}', label: 'penguins arriving by walking', why: 'walking is transport, not creation: it is already on the left in \\(\\nabla\\cdot(b\\underline{u})\\).', q: (b, x, u) => b * u } ] },
+        { tex: 'q^B = -\\alpha n', label: 'penguins get cold and leave', why: 'nobody leaves a huddle at \\(-40^\\circ\\)C; a sink makes penguins vanish.', q: b => -0.6 * b },
+        { tex: 'q^B = n\\,\\underline{u}', label: 'penguins arriving by walking', why: 'walking is transport, already on the left.', q: (b, x, u) => b * u } ] },
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = \\underline{0}', label: 'penguins only move with the huddle', ok: true, T: 0 },
-        { tex: '\\underline{T}^B = n\\,\\underline{u}', label: 'penguins carried through the boundary', why: 'that flux is the \\(\\nabla\\cdot(b\\underline{u})\\) term already, so you have counted it twice: the huddle goes round at double speed.', T: 'adv' },
-        { tex: '\\underline{T}^B = D\\nabla n', label: 'penguins shuffle randomly relative to the huddle', why: 'defensible for a loose crowd, but this huddle moves as one body. A diffusion flux smears the dense patch out.', T: 'dif', soft: true } ] },
-      solved: '\\(\\partial_t n+u\\,\\partial_x n=0\\) with \\(u=1\\), on \\(0\\le x\\le1\\) with periodic ends, from \\(n(x,0)=\\tfrac12+0.45\\,e^{-((x-0.3)/0.12)^2}\\).',
-      debrief: ['\\(\\partial n/\\partial t+\\nabla\\cdot(n\\underline{u})=0\\): pure conservation, the same equation as mass with \\(\\rho\\to n\\). Nothing is made, nothing crosses the boundary except by being carried.', 'The sting: if the huddle is packed solid so \\(n\\) is constant, the equation says \\(\\nabla\\cdot\\underline{u}=0\\). Incompressible penguins: the huddle can rotate and shear but not squash.']
+        { tex: '\\underline{T}^B = n\\,\\underline{u}', label: 'penguins carried through the boundary', why: 'that is \\(\\nabla\\cdot(b\\underline{u})\\) again: counted twice, double speed.', T: 'adv' },
+        { tex: '\\underline{T}^B = D\\nabla n', label: 'penguins shuffle randomly relative to the huddle', why: 'defensible for a loose crowd; this huddle moves as one body.', T: 'dif', soft: true } ] },
+      solved: '\\(\\partial_t n+u\\,\\partial_x n=0\\), \\(u=1\\), \\(0\\le x\\le1\\) periodic, \\(n(x,0)=\\tfrac12+0.45\\,e^{-((x-0.3)/0.12)^2}\\)',
+      debrief: ['\\(\\partial n/\\partial t+\\nabla\\cdot(n\\underline{u})=0\\): mass conservation with \\(\\rho\\to n\\).', 'Packed solid, \\(n\\) constant \\(\\Rightarrow\\nabla\\cdot\\underline{u}=0\\): incompressible penguins.']
     },
     {
-      title: 'Zombie outbreak', emoji: '🧟', brief: 'One zombie joins a crowd walking across campus (<b>everyone, zombie or not, walks with the crowd at \\(\\underline{u}\\)</b>). A zombie bites humans it meets and turns them. Build the conservation law for zombies, \\(z\\) per square metre, with humans \\(h\\) per square metre.<br><b>The picture:</b> the crowd\'s path across campus; the crowd walks in at the left and out at the right. <b>At the start</b> there is one small knot of zombies near the back of the crowd.',
+      title: 'Zombie outbreak', emoji: '🧟', brief: '<ul><li>A crowd walks across campus; <b>everyone, zombie or not, walks with it at \\(\\underline{u}\\)</b>. Zombies bite the humans they meet. Zombies \\(z\\), humans \\(h\\), per square metre.</li><li><b>Picture:</b> the crowd\'s path, in at the left, out at the right.</li><li><b>Start:</b> one small knot of zombies at the back.</li></ul>',
       periodic: false, u: 0.5, tend: 2.4, init: x => 0.08 * Math.exp(-(((x - 0.1) / 0.05) ** 2)), ymax: 1.1, D: 0.004, beta: 6,
       B: { ans: 0, tiles: [
         { tex: 'b = z', label: 'zombies per square metre', ok: true },
-        { tex: 'b = z + h', label: 'zombies plus humans per square metre', why: 'that is the total population, which is conserved but says nothing about the outbreak.' },
-        { tex: 'b = z/h', label: 'the zombie fraction', why: 'a ratio is not an amount per unit area: integrating it over campus does not give a number of zombies.' } ] },
+        { tex: 'b = z + h', label: 'zombies plus humans per square metre', why: 'total population: conserved, but silent about the outbreak.' },
+        { tex: 'b = z/h', label: 'the zombie fraction', why: 'a ratio is not an amount per unit area.' } ] },
       Q: { ans: 0, tiles: [
         { tex: 'q^B = \\beta z h', label: 'bites: needs a zombie and a human in the same place', ok: true, q: (b, x, u, r) => r.beta * b * Math.max(0, 1 - b) },
-        { tex: 'q^B = \\beta z', label: 'zombies multiply on their own', why: 'no humans, no bites: with \\(\\beta z\\) the zombies keep multiplying after everyone is already a zombie.', q: (b, x, u, r) => r.beta * b },
-        { tex: 'q^B = -\\beta z h', label: 'zombies lose fights with humans', why: 'the sign is the whole story: with a sink the outbreak fizzles.', q: (b, x, u, r) => -r.beta * b * Math.max(0, 1 - b) } ] },
+        { tex: 'q^B = \\beta z', label: 'zombies multiply on their own', why: 'no humans, no bites: \\(\\beta z\\) keeps growing with nobody left to bite.', q: (b, x, u, r) => r.beta * b },
+        { tex: 'q^B = -\\beta z h', label: 'zombies lose fights with humans', why: 'wrong sign: the outbreak fizzles.', q: (b, x, u, r) => -r.beta * b * Math.max(0, 1 - b) } ] },
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = \\underline{0}', label: 'zombies move with the crowd, nothing else', ok: true, T: 0 },
-        { tex: '\\underline{T}^B = z\\,\\underline{u}', label: 'zombies walking in through the boundary', why: 'already counted on the left: the zombies now advance at twice the crowd\'s speed.', T: 'adv' },
-        { tex: '\\underline{T}^B = -D\\nabla z', label: 'zombies spread out', why: 'two errors: the scenario says they move with the crowd, and the sign is backwards (\\(\\underline{h}^B\\) is what enters, so diffusion is \\(+D\\nabla z\\)). With a minus sign the zombies clump: anti-diffusion, which blows up.', T: 'antidif' } ] },
-      solved: '\\(\\partial_t z+u\\,\\partial_x z=\\beta z(1-z)\\) with \\(u=0.5\\), \\(\\beta=6\\), on \\(0\\le x\\le1\\): \\(z=0\\) entering at the left, free outflow at the right, from \\(z(x,0)=0.08\\,e^{-((x-0.1)/0.05)^2}\\).',
-      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\). The transport is on the left; the physics, bites, is the volume source on the right. With \\(h=1-z\\) the source is logistic, \\(\\beta z(1-z)\\): exponential at first, saturating when the crowd is all zombie.', 'Same template as mass and momentum: only \\(q^B\\) and \\(\\underline{T}^B\\) carry the physics (L07, last board).']
+        { tex: '\\underline{T}^B = z\\,\\underline{u}', label: 'zombies walking in through the boundary', why: 'counted twice: zombies at double the crowd\'s speed.', T: 'adv' },
+        { tex: '\\underline{T}^B = -D\\nabla z', label: 'zombies spread out', why: 'they move with the crowd; and the sign is backwards (\\(\\underline{h}^B\\) enters, so diffusion is \\(+D\\nabla z\\)): anti-diffusion blows up.', T: 'antidif' } ] },
+      solved: '\\(\\partial_t z+u\\,\\partial_x z=\\beta z(1-z)\\), \\(u=0.5\\), \\(\\beta=6\\), \\(0\\le x\\le1\\), \\(z=0\\) in at the left, outflow at the right, \\(z(x,0)=0.08\\,e^{-((x-0.1)/0.05)^2}\\)',
+      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.']
     },
     {
-      title: 'Crisps in the lecture theatre', emoji: '🍟', brief: 'Someone at the back opens a packet of crisps. <b>The ventilation blows air gently towards the front at \\(\\underline{u}\\)</b>, and the smell also spreads on its own. Build the conservation law for the smell, concentration \\(c\\) (smell per cubic metre).<br><b>The picture:</b> the theatre from the back row (left) to the lecturer (right); the draught blows left to right. <b>At the start</b> there is no smell anywhere; the packet opens at \\(t=0\\).',
+      title: 'Crisps in the lecture theatre', emoji: '🍟', brief: '<ul><li>Someone at the back opens a packet of crisps. <b>The ventilation blows towards the front at \\(\\underline{u}\\)</b>; the smell also spreads on its own. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> back row (left) to lecturer (right).</li><li><b>Start:</b> no smell; the packet opens at \\(t=0\\).</li></ul>',
       periodic: false, u: 0.35, tend: 3.4, init: x => 0, ymax: 1.1, D: 0.012, src: 0.12, x0: 0.12,
       B: { ans: 0, tiles: [
         { tex: 'b = c', label: 'smell per cubic metre', ok: true },
-        { tex: 'b = c\\,\\underline{u}', label: 'smell times the air velocity', why: 'that is the advective flux, not the density: it belongs inside \\(\\nabla\\cdot(b\\underline{u})\\).' },
-        { tex: 'b = \\int c\\,dV', label: 'the total smell in the room', why: 'that is \\(B\\), the total; \\(b\\) is its density.' } ] },
+        { tex: 'b = c\\,\\underline{u}', label: 'smell times the air velocity', why: 'that is the advective flux, not the density.' },
+        { tex: 'b = \\int c\\,dV', label: 'the total smell in the room', why: 'that is the total \\(B\\), not its density.' } ] },
       Q: { ans: 0, tiles: [
         { tex: 'q^B = s\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the packet releases smell at one seat', ok: true, q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? r.src / 0.05 : 0 },
-        { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'then where does it come from? The packet is a source inside the room.', q: () => 0 },
-        { tex: 'q^B = -\\nabla\\cdot(c\\,\\underline{u})', label: 'smell carried away by the draught', why: 'transport again, and it is already on the left: putting it here cancels the draught, so the smell never reaches the front.', q: 'cancel' } ] },
+        { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'the packet is a source inside the room.', q: () => 0 },
+        { tex: 'q^B = -\\nabla\\cdot(c\\,\\underline{u})', label: 'smell carried away by the draught', why: 'transport again, already on the left; here it cancels the draught.', q: 'cancel' } ] },
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = D\\nabla c', label: 'smell spreads from where there is more to where there is less', ok: true, T: 'dif' },
-        { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'a sign trap. \\(\\underline{h}^B=\\underline{T}^B\\cdot\\underline{n}\\) is the rate at which smell <em>enters</em>, so with \\(\\underline{n}\\) outward it is \\(+D\\,\\partial c/\\partial n\\): smell comes in where there is more outside. With the minus sign smell runs uphill and blows up.', T: 'antidif' },
-        { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'in still air you would still smell them eventually: molecules spread by diffusion as well as being carried.', T: 0 } ] },
-      solved: '\\(\\partial_t c+u\\,\\partial_x c=s\\,\\delta(x-x_0)+D\\,\\partial_{xx}c\\) with \\(u=0.35\\), \\(D=0.012\\), \\(x_0=0.12\\), on \\(0\\le x\\le1\\): \\(c=0\\) entering at the back, free outflow at the front, from \\(c(x,0)=0\\).',
-      debrief: ['\\(\\partial c/\\partial t+\\nabla\\cdot(c\\underline{u})=s\\,\\delta(\\underline{x}-\\underline{x}_0)+D\\nabla^2c\\): advection, a source, and Fick\'s diffusion flux. Chapter 2\'s pollutant example, and the template for Problem Sheet 3.', 'The sign of the flux is set by the convention, not the physics: in the notes \\(\\underline{h}^B\\) counts what comes <em>in</em>. Fick\'s law in its usual form, \\(\\underline{j}=-D\\nabla c\\), is the flux going <em>out</em>; same law, opposite bookkeeping.']
+        { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'sign trap: \\(\\underline{h}^B\\) is what <em>enters</em>, so it is \\(+D\\,\\partial c/\\partial n\\). With the minus sign smell runs uphill and blows up.', T: 'antidif' },
+        { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'in still air you would still smell them: diffusion.', T: 0 } ] },
+      solved: '\\(\\partial_t c+u\\,\\partial_x c=s\\,\\delta(x-x_0)+D\\,\\partial_{xx}c\\), \\(u=0.35\\), \\(D=0.012\\), \\(x_0=0.12\\), \\(0\\le x\\le1\\), \\(c=0\\) in at the back, outflow at the front, \\(c(x,0)=0\\)',
+      debrief: ['\\(\\partial c/\\partial t+\\nabla\\cdot(c\\underline{u})=s\\,\\delta(\\underline{x}-\\underline{x}_0)+D\\nabla^2c\\): advection, source, diffusion. The Chapter 2 pollutant example.', 'Sign: \\(\\underline{h}^B\\) counts what comes <em>in</em>, so the flux is \\(+D\\nabla c\\); Fick\'s usual \\(\\underline{j}=-D\\nabla c\\) is what goes <em>out</em>.']
     }
   ];
 
@@ -357,10 +359,10 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       box.querySelectorAll('.choice').forEach(b => { b.disabled = true; const k = +b.dataset.v; if (grp.tiles[k].ok) b.classList.add('right'); else if (k === st.pick[key]) b.classList.add(grp.tiles[k].soft ? 'right' : 'wrong'); });
     }
     const whys = [];
-    for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<p><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</p>'); }
+    for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<li><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</li>'); }
     $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts; $('result').className = 'result ' + (pts ? 'ok' : 'no');
     const yoursTex = lawTex({ Q: st.pick.Q, T: st.pick.T }, r), sameLaw = st.pick.Q === r.Q.ans && st.pick.T === r.T.ans;
-    const db = $('debrief'); db.innerHTML = whys.join('') + r.debrief.map(s => '<p>' + s + '</p>').join('') + '<p><b>What the strip actually solves.</b> One space dimension, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\). The notes\' law: ' + r.solved + (sameLaw ? '' : ' Your law instead: ' + yoursTex + ', same \\(u\\), ends and start.') + ' Finite differences, 64 cells, upwind for the transport term; the clip shows \\(t\\) from 0 to ' + r.tend + ' and repeats.</p>'; db.hidden = false;
+    const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same \\(u\\), ends and start</li>') + '<li>64 cells, upwind transport; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
     // run both laws
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
