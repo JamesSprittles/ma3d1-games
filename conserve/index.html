@@ -73,6 +73,9 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
 .result:empty { display: none; }
 .result.ok { color: var(--good); font-weight: 600; }
 .result.no { color: var(--key); font-weight: 600; }
+.play { margin: 0; font-size: 15.5px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--flow) 10%, transparent); }
+.play:empty { display: none; }
+.stage.sticky { position: sticky; top: 4px; z-index: 2; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); }
 .debrief { border-top: 1px solid var(--line); padding-top: 8px; font-size: 15.5px; display: flex; flex-direction: column; gap: 6px; }
 .debrief p { margin: 0; }
 .final { text-align: center; gap: 14px; padding-block: 22px; }
@@ -113,6 +116,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       <button class="primary" id="next" hidden>Next</button>
     </div>
     <p class="result" id="result" aria-live="polite"></p>
+    <div class="play" id="play" aria-live="polite"></div>
     <div class="debrief" id="debrief" hidden></div>
   </section>
 
@@ -168,20 +172,20 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
     },
     {
-      title: 'Cheese and onion in L4', emoji: '🍟', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of smell, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the smell spreads anyway. Smell \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
+      title: 'Cheese and onion in L4', emoji: '🧅', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of stink, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the stink spreads anyway. Stink \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
       periodic: false, u: 0, tend: 3.0, init: x => 0, ymax: 1.1, D: 0.004, mass: 0.12, x0: 0.5, w0: 0.05,
       B: { ans: 0, tiles: [
-        { tex: 'b = c', label: 'smell per cubic metre', ok: true },
-        { tex: 'b = \\int c\\,dV', label: 'the total smell in the room', why: 'that is the total \\(B\\), not its density.' },
-        { tex: 'b = c\\,\\underline{x}', label: 'smell times position', why: 'that is a moment of the smell, not an amount per unit volume.' } ] },
+        { tex: 'b = c', label: 'stink per cubic metre', ok: true },
+        { tex: 'b = \\int c\\,dV', label: 'the total stink in the room', why: 'that is the total \\(B\\), not its density.' },
+        { tex: 'b = c\\,\\underline{x}', label: 'stink times position', why: 'that is a moment of the stink, not an amount per unit volume.' } ] },
       Q: { ans: 0, tiles: [
         { tex: 'q^B = m\\,\\delta(\\underline{x}-\\underline{x}_0)\\,\\delta(t)', label: 'one puff, at the bag, at \\(t=0\\)', ok: true, puff: true, q: () => 0 },
-        { tex: 'q^B = m\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the bag keeps giving off smell', why: 'the bag popped once; this pumps smell in for ever, so the peak never falls.', q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? 0.5 * r.mass / 0.05 : 0 },
-        { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'then where did the smell come from? Nothing appears.', q: () => 0 } ] },
+        { tex: 'q^B = m\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the bag keeps giving off stink', why: 'the bag popped once; this pumps stink in for ever, so the peak never falls.', q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? 0.5 * r.mass / 0.05 : 0 },
+        { tex: 'q^B = 0', label: 'stink is neither made nor destroyed', why: 'then where did the stink come from? Nothing appears.', q: () => 0 } ] },
       T: { ans: 0, tiles: [
-        { tex: '\\underline{T}^B = D\\nabla c', label: 'smell spreads from where there is more to where there is less', ok: true, T: 'dif' },
-        { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'sign trap: \\(\\underline{h}^B\\) is what <em>enters</em>, so it is \\(+D\\,\\partial c/\\partial n\\). With the minus sign smell runs uphill and blows up.', T: 'antidif' },
-        { tex: '\\underline{T}^B = \\underline{0}', label: 'the smell only goes where the air goes', why: 'the air is still, so the smell would stay on the seat for ever. Diffusion moves it.', T: 0 } ] },
+        { tex: '\\underline{T}^B = D\\nabla c', label: 'stink spreads from where there is more to where there is less', ok: true, T: 'dif' },
+        { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'sign trap: \\(\\underline{h}^B\\) is what <em>enters</em>, so it is \\(+D\\,\\partial c/\\partial n\\). With the minus sign stink runs uphill and blows up.', T: 'antidif' },
+        { tex: '\\underline{T}^B = \\underline{0}', label: 'the stink only goes where the air goes', why: 'the air is still, so the stink would stay on the seat for ever. Diffusion moves it.', T: 0 } ] },
       solved: '\\(\\partial_t c=D\\,\\partial_{xx}c\\) for \\(t>0\\), \\(D=0.004\\), \\(c\\to0\\) far away, starting from the puff: a narrow Gaussian of mass \\(m=0.12\\) at \\(x_0=0.5\\) (width \\(0.05\\))',
       debrief: ['\\(\\partial c/\\partial t=m\\,\\delta(\\underline{x}-\\underline{x}_0)\\delta(t)+D\\nabla^2c\\): with \\(\\underline{u}=\\underline{0}\\), the diffusion (heat) equation.', 'In 1D the puff becomes \\(c=\\dfrac{m}{\\sqrt{4\\pi Dt}}\\,e^{-(x-x_0)^2/4Dt}\\): a Gaussian, width \\(\\propto\\sqrt{Dt}\\), height \\(\\propto1/\\sqrt{t}\\), area fixed.', 'Sign: \\(\\underline{h}^B\\) counts what comes <em>in</em>, so the flux is \\(+D\\nabla c\\); Fick\'s usual \\(\\underline{j}=-D\\nabla c\\) is what goes <em>out</em>.']
     }
@@ -347,10 +351,24 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       b.innerHTML = '<span class="tex">\\(' + t.tex + '\\)</span><small>' + t.label + '</small>'; b.addEventListener('click', () => pick(key, k)); box.append(b); });
   }
   function pick(key, k) {
+    if (st.phase === 'done') return play(key, k);
     if (st.phase !== 'build') return; st.pick[key] = k;
     const box = { B: $('chB'), Q: $('chQ'), T: $('chT') }[key];
     box.querySelectorAll('.choice').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === k)));
     $('go').disabled = !(st.pick.B !== null && st.pick.Q !== null && st.pick.T !== null); paintLaw('build');
+  }
+  function playNote() {
+    const r = ROUNDS[R], whys = [];
+    for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && !t.soft && t.why) whys.push('<li>' + t.why + '</li>'); }
+    $('play').innerHTML = '<b>Have a play:</b> tap any tile to swap it in and rerun your law (your score is locked).<br>Now running: ' + lawTex(st.pick, r) + (whys.length ? '<ul>' + whys.join('') + '</ul>' : ' (the notes\' law)');
+    typeset([$('play')]);
+  }
+  function play(key, k) {
+    const r = ROUNDS[R]; st.pick[key] = k;
+    const box = { B: $('chB'), Q: $('chQ'), T: $('chT') }[key];
+    box.querySelectorAll('.choice').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === k)));
+    st.sim.picks = { ...st.pick }; st.sim.yours = makeSim(r, st.sim.picks); st.sim.truth = makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans });
+    paintLaw('done'); playNote(); draw();
   }
   function showFinal(on) { for (const sel of ['#stage', '#brief', '#key', '#law']) document.querySelectorAll(sel).forEach(e => e.hidden = on); if (on) { $('title').textContent = 'Finished'; window.scrollTo(0, 0); } }
   function load(i) {
@@ -360,7 +378,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title + ' ' + r.emoji; $('brief').innerHTML = r.brief;
     tiles(r.B, 'B', $('chB')); tiles(r.Q, 'Q', $('chQ')); tiles(r.T, 'T', $('chT'));
     $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
-    $('result').textContent = ''; $('result').className = 'result'; $('debrief').hidden = true; $('debrief').innerHTML = '';
+    $('result').textContent = ''; $('result').className = 'result'; $('play').innerHTML = ''; $('stage').classList.remove('sticky'); $('debrief').hidden = true; $('debrief').innerHTML = '';
     paintLaw('build'); renderDots(); size(); typeset([$('brief'), $('key'), $('chB'), $('chQ'), $('chT'), $('qb'), $('qq'), $('qt')]);
   }
   $('go').addEventListener('click', () => {
@@ -370,7 +388,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     const n = Object.values(ok).filter(Boolean).length, pts = n === 3 ? 10 : 3 * n; results[R] = pts;
     if (pts === 10) snd.ok(); else if (pts > 0) snd.half(); else snd.no();
     for (const [key, grp, box] of [['B', r.B, $('chB')], ['Q', r.Q, $('chQ')], ['T', r.T, $('chT')]]) {
-      box.querySelectorAll('.choice').forEach(b => { b.disabled = true; const k = +b.dataset.v; if (grp.tiles[k].ok) b.classList.add('right'); else if (k === st.pick[key]) b.classList.add(grp.tiles[k].soft ? 'right' : 'wrong'); });
+      box.querySelectorAll('.choice').forEach(b => { const k = +b.dataset.v; if (grp.tiles[k].ok) b.classList.add('right'); else if (k === st.pick[key]) b.classList.add(grp.tiles[k].soft ? 'right' : 'wrong'); });
     }
     const whys = [];
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<li><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</li>'); }
@@ -381,7 +399,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
     $('stage').hidden = false; size(); raf = requestAnimationFrame(loop);
-    paintLaw('done');
+    paintLaw('done'); playNote(); $('stage').classList.add('sticky');
     $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
     renderDots(); typeset([$('result'), db]);
     $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
@@ -391,7 +409,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     else {
       cancelAnimationFrame(raf);
       const tot = results.reduce((a, s) => a + (s || 0), 0), fr = tot / (ROUNDS.length * 10);
-      $('emo').textContent = fr === 1 ? '🧟' : fr >= 0.7 ? '🐧' : fr >= 0.4 ? '🍟' : '💥'; $('emo').className = 'emo' + (fr >= 0.7 ? ' spin' : '');
+      $('emo').textContent = fr === 1 ? '🧟' : fr >= 0.7 ? '🐧' : fr >= 0.4 ? '🧅' : '💥'; $('emo').className = 'emo' + (fr >= 0.7 ? ' spin' : '');
       $('card').hidden = true; $('final').hidden = false; showFinal(true); snd.final(fr); $('finalScore').textContent = tot;
     }
   });
