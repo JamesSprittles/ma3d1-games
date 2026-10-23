@@ -141,7 +141,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx; see makeSim/stepSim.
   const ROUNDS = [
     {
-      title: 'Emperor penguins', emoji: '🐧', flip: true, brief: '<ul><li>A huddle of emperor penguins circles slowly all night, moving as one block: <b>every penguin moves at the huddle\'s velocity \\(\\underline{u}\\)</b>; nobody wanders relative to their neighbours.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
+      title: 'Advection: penguins', emoji: '🐧', flip: true, brief: '<ul><li>A huddle of emperor penguins circles slowly all night, moving as one block: <b>every penguin moves at the huddle\'s velocity \\(\\underline{u}\\)</b>; nobody wanders relative to their neighbours.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
       periodic: true, u: 1, tend: 3.2, init: x => 0.5 + 0.45 * Math.exp(-(((x - 0.3) / 0.12) ** 2)), ymax: 1.4, D: 0.004,
       B: { ans: 0, tiles: [
         { tex: 'b = n', label: 'penguins per square metre', ok: true },
@@ -159,7 +159,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       debrief: ['\\(\\partial n/\\partial t+\\nabla\\cdot(n\\underline{u})=0\\): mass conservation with \\(\\rho\\to n\\).', 'Packed solid, \\(n\\) constant \\(\\Rightarrow\\nabla\\cdot\\underline{u}=0\\): incompressible penguins.']
     },
     {
-      title: 'Zombie outbreak', emoji: '🧟', big: true, brief: '<ul><li>A crowd walks across campus; <b>everyone, zombie or not, walks with it at \\(\\underline{u}\\)</b>. A bite turns a human into a zombie. Zombies \\(z\\), humans \\(h\\), per square metre.</li><li><b>Everyone is a zombie or a human: \\(z+h=1\\)</b> (crowd density scaled to 1).</li><li><b>Constants:</b> \\(\\beta>0\\), the bite rate; \\(D>0\\), a diffusivity (how fast things spread out).</li><li><b>Picture:</b> the crowd\'s path, in at the left, out at the right.</li><li><b>Start:</b> one small knot of zombies at the back.</li></ul>',
+      title: 'Reaction: zombies', emoji: '🧟', big: true, brief: '<ul><li>A crowd walks across campus; <b>everyone, zombie or not, walks with it at \\(\\underline{u}\\)</b>. A bite turns a human into a zombie. Zombies \\(z\\), humans \\(h\\), per square metre.</li><li><b>Everyone is a zombie or a human: \\(z+h=1\\)</b> (crowd density scaled to 1).</li><li><b>Constants:</b> \\(\\beta>0\\), the bite rate; \\(D>0\\), a diffusivity (how fast things spread out).</li><li><b>Picture:</b> the crowd\'s path, in at the left, out at the right.</li><li><b>Start:</b> one small knot of zombies at the back.</li></ul>',
       periodic: false, u: 0.5, tend: 2.4, init: x => 0.08 * Math.exp(-(((x - 0.1) / 0.05) ** 2)), ymax: 1.1, D: 0.004, beta: 6,
       B: { ans: 0, tiles: [
         { tex: 'b = z', label: 'zombies per square metre', ok: true },
@@ -177,7 +177,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'Why \\(h=1-z\\): a bite swaps a human for a zombie, so \\(z+h\\) has no source and is just carried along. The crowd starts at density 1 (scaled), so \\(z+h=1\\) everywhere, always. Then \\(q^B=\\beta z(1-z)\\): logistic growth, the SI epidemic model.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
     },
     {
-      title: 'Cheese and onion in L4', emoji: '🧅', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of stink, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the stink spreads anyway. Stink \\(c\\) per cubic metre.</li><li><b>Constants:</b> \\(m\\), the stink in the puff; \\(D>0\\), the diffusivity of the stink (m\\(^2\\)/s).</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
+      title: 'Diffusion: crisps in L4', emoji: '🧅', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of stink, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the stink spreads anyway. Stink \\(c\\) per cubic metre.</li><li><b>Constants:</b> \\(m\\), the stink in the puff; \\(D>0\\), the diffusivity of the stink (m\\(^2\\)/s).</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
       periodic: false, u: 0, tend: 3.0, init: x => 0, ymax: 1.1, D: 0.004, mass: 0.12, x0: 0.5, w0: 0.05,
       B: { ans: 0, tiles: [
         { tex: 'b = c', label: 'stink per cubic metre', ok: true },
