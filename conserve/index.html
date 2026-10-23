@@ -129,7 +129,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
 <script>
 (function () {
   // A tile: tex (what goes in the law), label (plain words), and how it behaves in the 1D strip model.
-  // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx, upwind advection, explicit diffusion.
+  // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx; see makeSim/stepSim.
   const ROUNDS = [
     {
       title: 'Emperor penguins', emoji: '🐧', brief: '<ul><li>A huddle of emperor penguins shuffles round and round all night: <b>every penguin moves with the huddle, velocity \\(\\underline{u}\\)</b>.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
@@ -177,7 +177,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       Q: { ans: 0, tiles: [
         { tex: 'q^B = s\\,\\delta(\\underline{x}-\\underline{x}_0)', label: 'the packet releases smell at one seat', ok: true, q: (b, x, u, r) => Math.abs(x - r.x0) < 0.025 ? r.src / 0.05 : 0 },
         { tex: 'q^B = 0', label: 'smell is neither made nor destroyed', why: 'the packet is a source inside the room.', q: () => 0 },
-        { tex: 'q^B = -\\nabla\\cdot(c\\,\\underline{u})', label: 'smell carried away by the draught', why: 'transport again, already on the left; here it cancels the draught.', q: 'cancel' } ] },
+        { tex: 'q^B = -\\nabla\\cdot(c\\,\\underline{u})', label: 'smell carried away by the draught', why: 'transport again, already on the left; here it cancels the draught, and with no packet term nothing appears.', q: 'cancel' } ] },
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = D\\nabla c', label: 'smell spreads from where there is more to where there is less', ok: true, T: 'dif' },
         { tex: '\\underline{T}^B = -D\\nabla c', label: 'the same, with the usual minus sign', why: 'sign trap: \\(\\underline{h}^B\\) is what <em>enters</em>, so it is \\(+D\\,\\partial c/\\partial n\\). With the minus sign smell runs uphill and blows up.', T: 'antidif' },
@@ -250,28 +250,41 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   }
   // ---------- 1D strip model ----------
   const N = 64;
+  // Advection is done exactly: with uniform u the law in the co-moving frame xi = x - u t has no transport term, so we evolve
+  // B(xi) by source and diffusion only and read the strip off as b(x) = B(x - u t). No numerical diffusion smears the penguins.
   function makeSim(r, picks) {
-    const dx = 1 / N, b = new Float64Array(N), x = new Float64Array(N);
-    for (let i = 0; i < N; i++) { x[i] = (i + 0.5) * dx; b[i] = r.init(x[i]); }
+    const dx = 1 / N, per = r.periodic, M = per ? N : 3 * N, lo = per ? 0 : -2; // open strips carry a run-in of empty cells on the left
+    const B = new Float64Array(M), xi = new Float64Array(M);
+    for (let j = 0; j < M; j++) { xi[j] = lo + (j + 0.5) * dx; B[j] = (xi[j] >= 0 && xi[j] <= 1) ? r.init(xi[j]) : 0; }
     const qt = r.Q.tiles[picks.Q], tt = r.T.tiles[picks.T];
-    return { b, x, dx, t: 0, u: r.u, q: qt.q, T: tt.T, blown: false, r };
+    const ueff = tt.T === 'adv' ? 2 * r.u : qt.q === 'cancel' ? 0 : r.u;
+    const s = { B, xi, dx, lo, M, per, b: new Float64Array(N), x: new Float64Array(N), t: 0, shift: 0, u: r.u, ueff, q: qt.q, T: tt.T, blown: false, r };
+    for (let i = 0; i < N; i++) s.x[i] = (i + 0.5) * dx;
+    sample(s); return s;
+  }
+  function sample(s) { // b(x) = B(x - shift), linear interpolation for display only
+    const { B, dx, lo, M, per } = s;
+    for (let i = 0; i < N; i++) {
+      let xi = s.x[i] - s.shift; if (per) xi = ((xi % 1) + 1) % 1;
+      const f = (xi - lo) / dx - 0.5, j = Math.floor(f), w = f - j;
+      const at = k => per ? B[((k % M) + M) % M] : (k < 0 || k >= M ? 0 : B[k]);
+      s.b[i] = (1 - w) * at(j) + w * at(j + 1);
+    }
   }
   function stepSim(s, dt) {
     if (s.blown) return;
-    const { b, dx, u, r } = s, N = b.length, nb = new Float64Array(N), per = r.periodic;
-    const at = i => per ? b[(i + N) % N] : (i < 0 ? 0 : i >= N ? b[N - 1] : b[i]);
-    let ueff = u; if (s.T === 'adv') ueff = 2 * u; // double-counted advective flux
+    const { B, dx, M, per, r } = s, nb = new Float64Array(M);
+    const at = j => per ? B[((j % M) + M) % M] : (j < 0 ? 0 : j >= M ? B[M - 1] : B[j]);
     const Dcoef = s.T === 'dif' ? r.D : s.T === 'antidif' ? -r.D : 0;
-    for (let i = 0; i < N; i++) {
-      // upwind advection (u > 0)
-      let adv = -ueff * (at(i) - at(i - 1)) / dx;
-      if (s.q === 'cancel') adv = 0; // q = -div(b u) cancels the transport term
-      const dif = Dcoef * (at(i + 1) - 2 * at(i) + at(i - 1)) / (dx * dx);
-      const src = typeof s.q === 'function' ? s.q(at(i), s.x[i], u, r) : 0;
-      nb[i] = at(i) + dt * (adv + dif + src);
+    for (let j = 0; j < M; j++) {
+      const x = s.xi[j] + s.shift; // position in the lab frame
+      const dif = Dcoef * (at(j + 1) - 2 * at(j) + at(j - 1)) / (dx * dx);
+      const inside = per || (x >= 0 && x <= 1);
+      const src = (inside && typeof s.q === 'function') ? s.q(at(j), per ? ((x % 1) + 1) % 1 : x, s.u, r) : 0;
+      nb[j] = at(j) + dt * (dif + src);
     }
-    for (let i = 0; i < N; i++) { if (!isFinite(nb[i]) || Math.abs(nb[i]) > 50) { s.blown = true; } b[i] = Math.max(-1, Math.min(50, nb[i])); }
-    s.t += dt;
+    for (let j = 0; j < M; j++) { if (!isFinite(nb[j]) || Math.abs(nb[j]) > 50) s.blown = true; B[j] = Math.max(-1, Math.min(50, nb[j])); }
+    s.t += dt; s.shift += s.ueff * dt; sample(s);
   }
 
   let W = 300, H = 240;
@@ -362,7 +375,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<li><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</li>'); }
     $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts; $('result').className = 'result ' + (pts ? 'ok' : 'no');
     const yoursTex = lawTex({ Q: st.pick.Q, T: st.pick.T }, r), sameLaw = st.pick.Q === r.Q.ans && st.pick.T === r.T.ans;
-    const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same \\(u\\), ends and start</li>') + '<li>64 cells, upwind transport; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
+    const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, \\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same \\(u\\), ends and start</li>') + '<li>64 cells; transport done exactly in the frame moving with \\(u\\), diffusion and sources by finite differences; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
     // run both laws
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
