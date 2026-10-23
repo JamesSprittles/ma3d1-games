@@ -75,6 +75,8 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
 .result.no { color: var(--key); font-weight: 600; }
 .play { margin: 0; font-size: 15.5px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--flow) 10%, transparent); }
 .play:empty { display: none; }
+.playhint { margin: 0; font-size: 15.5px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--flow); background: color-mix(in srgb, var(--flow) 12%, transparent); }
+.playhint[hidden] { display: none; }
 .stage.sticky { position: sticky; top: 4px; z-index: 2; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); }
 .debrief { border-top: 1px solid var(--line); padding-top: 8px; font-size: 15.5px; display: flex; flex-direction: column; gap: 6px; }
 .debrief p { margin: 0; }
@@ -105,6 +107,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   <div class="key" id="key"><b>Your job:</b> fill the three slots. Transport by the flow, \(\nabla\cdot(b\,\underline{u})\), is already there.<ul><li>\(b\): what we are counting, per unit volume</li><li>\(q^B\): made or destroyed inside?</li><li>\(\underline{T}^B\): crosses the boundary other than by being carried?</li></ul></div>
 
   <section class="card" id="card">
+    <p class="playhint" id="playhint" hidden>👆 <b>Have a play:</b> the tiles stay live. Tap any one to swap it in and watch your strip change. Your score is locked.</p>
     <p class="q" id="qb">1. \(b\): what are we counting? <small>the amount per unit volume, whose rate of change the law gives</small></p>
     <div class="choices" id="chB" role="group" aria-label="Choose b"></div>
     <p class="q" id="qq">2. \(q^B\): created or destroyed inside? <small>\(0\) if it can only change by crossing the boundary</small></p>
@@ -136,7 +139,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   // Model on a periodic or open strip x in [0,1]: db/dt = -d(b u)/dx + q(b, x) + d(T)/dx; see makeSim/stepSim.
   const ROUNDS = [
     {
-      title: 'Emperor penguins', emoji: '🐧', brief: '<ul><li>A huddle of emperor penguins shuffles round and round all night: <b>every penguin moves with the huddle, velocity \\(\\underline{u}\\)</b>.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
+      title: 'Emperor penguins', emoji: '🐧', brief: '<ul><li>A huddle of emperor penguins circles slowly all night, moving as one block: <b>every penguin moves at the huddle\'s velocity \\(\\underline{u}\\)</b>; nobody wanders relative to their neighbours.</li><li><b>Picture:</b> one lap, straightened into a strip; off the right end means back in at the left.</li><li><b>Start:</b> spread evenly, with one denser clump.</li></ul>',
       periodic: true, u: 1, tend: 3.2, init: x => 0.5 + 0.45 * Math.exp(-(((x - 0.3) / 0.12) ** 2)), ymax: 1.4, D: 0.004,
       B: { ans: 0, tiles: [
         { tex: 'b = n', label: 'penguins per square metre', ok: true },
@@ -149,12 +152,12 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
       T: { ans: 0, tiles: [
         { tex: '\\underline{T}^B = \\underline{0}', label: 'penguins only move with the huddle', ok: true, T: 0 },
         { tex: '\\underline{T}^B = n\\,\\underline{u}', label: 'penguins carried through the boundary', why: 'that is \\(\\nabla\\cdot(b\\underline{u})\\) again: counted twice, double speed.', T: 'adv' },
-        { tex: '\\underline{T}^B = D\\nabla n', label: 'penguins shuffle randomly relative to the huddle', why: 'defensible for a loose crowd; this huddle moves as one body.', T: 'dif', soft: true } ] },
+        { tex: '\\underline{T}^B = D\\nabla n', label: 'penguins wander randomly relative to the huddle', why: 'that is diffusion: it smears the clump out. This huddle moves as one block (fine for a loose crowd, not here).', T: 'dif' } ] },
       solved: '\\(\\partial_t n+u\\,\\partial_x n=0\\), \\(u=1\\), \\(0\\le x\\le1\\) periodic, \\(n(x,0)=\\tfrac12+0.45\\,e^{-((x-0.3)/0.12)^2}\\)',
       debrief: ['\\(\\partial n/\\partial t+\\nabla\\cdot(n\\underline{u})=0\\): mass conservation with \\(\\rho\\to n\\).', 'Packed solid, \\(n\\) constant \\(\\Rightarrow\\nabla\\cdot\\underline{u}=0\\): incompressible penguins.']
     },
     {
-      title: 'Zombie outbreak', emoji: '🧟', brief: '<ul><li>A crowd walks across campus; <b>everyone, zombie or not, walks with it at \\(\\underline{u}\\)</b>. Zombies bite the humans they meet. Zombies \\(z\\), humans \\(h\\), per square metre.</li><li><b>Picture:</b> the crowd\'s path, in at the left, out at the right.</li><li><b>Start:</b> one small knot of zombies at the back.</li></ul>',
+      title: 'Zombie outbreak', emoji: '🧟', brief: '<ul><li>A crowd walks across campus; <b>everyone, zombie or not, walks with it at \\(\\underline{u}\\)</b>. A bite turns a human into a zombie. Zombies \\(z\\), humans \\(h\\), per square metre.</li><li><b>Picture:</b> the crowd\'s path, in at the left, out at the right.</li><li><b>Start:</b> one small knot of zombies at the back.</li></ul>',
       periodic: false, u: 0.5, tend: 2.4, init: x => 0.08 * Math.exp(-(((x - 0.1) / 0.05) ** 2)), ymax: 1.1, D: 0.004, beta: 6,
       B: { ans: 0, tiles: [
         { tex: 'b = z', label: 'zombies per square metre', ok: true },
@@ -169,7 +172,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
         { tex: '\\underline{T}^B = z\\,\\underline{u}', label: 'zombies walking in through the boundary', why: 'counted twice: zombies at double the crowd\'s speed.', T: 'adv' },
         { tex: '\\underline{T}^B = -D\\nabla z', label: 'zombies spread out', why: 'they move with the crowd; and the sign is backwards (\\(\\underline{h}^B\\) enters, so diffusion is \\(+D\\nabla z\\)): anti-diffusion blows up.', T: 'antidif' } ] },
       solved: '\\(\\partial_t z+u\\,\\partial_x z=\\beta z(1-z)\\), \\(u=0.5\\), \\(\\beta=6\\), \\(0\\le x\\le1\\), \\(z=0\\) in at the left, outflow at the right, \\(z(x,0)=0.08\\,e^{-((x-0.1)/0.05)^2}\\)',
-      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'With \\(h=1-z\\) the source is logistic: exponential, then saturating.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
+      debrief: ['\\(\\partial z/\\partial t+\\nabla\\cdot(z\\underline{u})=\\beta zh\\): transport on the left, the physics (bites) in \\(q^B\\).', 'Why \\(h=1-z\\): a bite swaps a human for a zombie, so \\(z+h\\) has no source and is just carried along. The crowd starts at density 1 (scaled), so \\(z+h=1\\) everywhere, always. Then \\(q^B=\\beta z(1-z)\\): logistic growth, the SI epidemic model.', 'Zombies are not conserved, and that is fine: the law is bookkeeping (rate of change = carried in + made inside + let in through the boundary). Only with \\(q^B=0\\) and \\(\\underline{T}^B=\\underline{0}\\) is the amount conserved.']
     },
     {
       title: 'Cheese and onion in L4', emoji: '🧅', brief: '<ul><li>Someone in the middle of L4 sits on a packet of cheese and onion crisps. <b>Pop!</b> One puff of stink, released at \\(t=0\\). <b>The air is still</b> (\\(\\underline{u}=\\underline{0}\\)), but the stink spreads anyway. Stink \\(c\\) per cubic metre.</li><li><b>Picture:</b> L4, back row (left) to lecturer (right); the bag is in the middle.</li><li><b>Start:</b> the puff, just after the bag pops.</li></ul>',
@@ -360,7 +363,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
   function playNote() {
     const r = ROUNDS[R], whys = [];
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && !t.soft && t.why) whys.push('<li>' + t.why + '</li>'); }
-    $('play').innerHTML = '<b>Have a play:</b> tap any tile to swap it in and rerun your law (your score is locked).<br>Now running: ' + lawTex(st.pick, r) + (whys.length ? '<ul>' + whys.join('') + '</ul>' : ' (the notes\' law)');
+    $('play').innerHTML = '<b>Now running:</b> ' + lawTex(st.pick, r) + (whys.length ? '<ul>' + whys.join('') + '</ul>' : ' (the notes\' law)');
     typeset([$('play')]);
   }
   function play(key, k) {
@@ -378,7 +381,7 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     $('title').textContent = 'Round ' + (R + 1) + ': ' + r.title + ' ' + r.emoji; $('brief').innerHTML = r.brief;
     tiles(r.B, 'B', $('chB')); tiles(r.Q, 'Q', $('chQ')); tiles(r.T, 'T', $('chT'));
     $('go').disabled = true; $('go').hidden = false; $('next').hidden = true;
-    $('result').textContent = ''; $('result').className = 'result'; $('play').innerHTML = ''; $('stage').classList.remove('sticky'); $('debrief').hidden = true; $('debrief').innerHTML = '';
+    $('result').textContent = ''; $('result').className = 'result'; $('play').innerHTML = ''; $('playhint').hidden = true; $('stage').classList.remove('sticky'); $('debrief').hidden = true; $('debrief').innerHTML = '';
     paintLaw('build'); renderDots(); size(); typeset([$('brief'), $('key'), $('chB'), $('chQ'), $('chT'), $('qb'), $('qq'), $('qt')]);
   }
   $('go').addEventListener('click', () => {
@@ -392,14 +395,14 @@ button:focus-visible { outline: 3px solid var(--flow); outline-offset: 2px; }
     }
     const whys = [];
     for (const [key, grp] of [['B', r.B], ['Q', r.Q], ['T', r.T]]) { const t = grp.tiles[st.pick[key]]; if (!t.ok && t.why) whys.push('<li><b>' + (key === 'B' ? '\\(b\\)' : key === 'Q' ? '\\(q^B\\)' : '\\(\\underline{T}^B\\)') + ':</b> ' + t.why + '</li>'); }
-    $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts; $('result').className = 'result ' + (pts ? 'ok' : 'no');
+    $('result').textContent = (n === 3 ? 'All three right.' : n + ' of 3 right.') + ' +' + pts + '. Now tap any tile to try it.'; $('result').className = 'result ' + (pts ? 'ok' : 'no');
     const yoursTex = lawTex({ Q: st.pick.Q, T: st.pick.T }, r), sameLaw = st.pick.Q === r.Q.ans && st.pick.T === r.T.ans;
     const db = $('debrief'); db.innerHTML = '<ul>' + whys.join('') + r.debrief.map(s => '<li>' + s + '</li>').join('') + '</ul><p><b>What the strip solves</b> (1D, ' + (r.u ? '\\(\\underline{u}=(u,0,0)\\) uniform, so \\(\\nabla\\cdot(b\\underline{u})=u\\,\\partial_x b\\)' : '\\(\\underline{u}=\\underline{0}\\), so no transport term') + '):</p><ul><li>notes\' law: ' + r.solved + '</li>' + (sameLaw ? '' : '<li>your law: ' + yoursTex + ', same ' + (r.u ? '\\(u\\), ' : '') + 'ends and start</li>') + '<li>64 cells; ' + (r.u ? 'transport done exactly in the frame moving with \\(u\\), ' : '') + 'diffusion and sources by finite differences; \\(0\\le t\\le' + r.tend + '\\), repeating</li></ul>'; db.hidden = false;
     // run both laws
     const bPick = st.pick.B; // b only labels the law; the strip always evolves the right density
     st.sim = { r, picks: { B: bPick, Q: st.pick.Q, T: st.pick.T }, yours: makeSim(r, { B: bPick, Q: st.pick.Q, T: st.pick.T }), truth: makeSim(r, { B: 0, Q: r.Q.ans, T: r.T.ans }) };
     $('stage').hidden = false; size(); raf = requestAnimationFrame(loop);
-    paintLaw('done'); playNote(); $('stage').classList.add('sticky');
+    paintLaw('done'); playNote(); $('stage').classList.add('sticky'); $('playhint').hidden = false;
     $('go').hidden = true; $('next').hidden = false; $('next').textContent = R < ROUNDS.length - 1 ? 'Next round' : 'See total';
     renderDots(); typeset([$('result'), db]);
     $('stage').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
